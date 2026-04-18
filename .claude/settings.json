@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_compound-engineering_playwright__browser_navigate",
+      "mcp__plugin_compound-engineering_playwright__browser_wait_for",
+      "mcp__plugin_compound-engineering_playwright__browser_click",
+      "mcp__plugin_compound-engineering_playwright__browser_console_messages",
+      "mcp__plugin_compound-engineering_context7__query-docs"
+    ]
+  }
+}
