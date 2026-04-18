@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FiddleHed Practice Engine — MVP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Georgia, serif;
+      max-width: 640px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.5;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .tune-title {
+      color: #555;
+      font-style: italic;
+      margin-top: 0;
+    }
+    .controls {
+      margin: 1.5rem 0;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+    .tempo {
+      margin: 1rem 0;
+    }
+    .tempo label {
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+    .tempo input[type="range"] {
+      width: 100%;
+    }
+    .status {
+      margin-top: 1rem;
+      color: #666;
+      font-size: 0.9rem;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>FiddleHed Practice Engine</h1>
+  <p class="tune-title" id="tune-title">Loading tune…</p>
+
+  <div class="controls">
+    <button id="play" disabled>Play</button>
+    <button id="pause" disabled>Pause</button>
+    <button id="stop" disabled>Stop</button>
+  </div>
+
+  <div class="tempo">
+    <label for="tempo">Tempo: <span id="tempo-readout">100%</span></label>
+    <input type="range" id="tempo" min="50" max="150" value="100" step="1" />
+  </div>
+
+  <p class="status" id="status">Initializing AlphaTab…</p>
+
+  <!-- Hidden container for AlphaTab (required, even though we're not rendering sheet music) -->
+  <div id="alphatab-container" style="display: none;"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.4.3/dist/alphaTab.min.js"></script>
+  <script src="js/player.js"></script>
+</body>
+</html>
