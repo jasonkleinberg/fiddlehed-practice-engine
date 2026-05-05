@@ -30,6 +30,15 @@
       cursor: pointer;
     }
     button:disabled { cursor: not-allowed; opacity: 0.5; }
+    .tune-selector {
+      margin: 1rem 0 0.5rem;
+    }
+    .tune-selector label {
+      margin-right: 0.5rem;
+    }
+    .tune-selector select {
+      font-size: 1rem;
+    }
     .tempo, .metronome {
       margin: 1rem 0;
     }
@@ -50,6 +59,12 @@
 </head>
 <body>
   <h1>FiddleHed Practice Engine</h1>
+
+  <div class="tune-selector">
+    <label for="tune-select">Tune:</label>
+    <select id="tune-select" disabled></select>
+  </div>
+
   <p class="tune-title" id="tune-title">Loading tune…</p>
 
   <div class="controls">
