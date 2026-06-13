@@ -273,3 +273,57 @@ _Each Claude Code session should append an entry here: what was done, what was d
 4. **AB loop by bar range.** Jason's Phase 2 candidate from the MVP kickoff. Students want to loop one phrase, not the whole tune. Would reuse the existing watchdog seek logic.
 
 5. **Render the sheet music with a playback cursor.** One AlphaTab config flag change to enable, plus un-hiding the container. Nice-to-have for students who read notation.
+
+---
+
+## 2026-04-28 — Tune-selector dropdown (BACKFILLED 2026-06-12)
+
+_This work shipped in commit `0d3afe4` ("player updates") on 2026-04-28 but was never logged at the time. Reconstructed from the diff on 2026-06-12 so the log stops lying about "tune selection" being an open task._
+
+**What happened:**
+- Built the tune-picker dropdown that the prior log listed as the #1 next task. The hardcoded `TUNE_FILE` / `TUNE_TITLE` constants are gone.
+- Added `music/index.json` — a hand-maintained array of `{ file, title }` entries. The page fetches it on load, populates a `<select id="tune-select">`, and loads the first tune automatically.
+- `loadTune(file, title)` handles switching: cancels any pending count-in, stops playback + the watchdog, disables transport buttons, fetches the new MusicXML, and `api.load()`s it. `scoreLoaded` / `playerReady` recompute pickup, loop ticks, and BPM per tune, so switching tunes is clean.
+- Added a second tune: `music/Orange Blossom Special.musicxml`.
+
+**Known limitations carried forward:**
+- `index.json` is hand-typed. Fine now; at hundreds of tunes it WILL drift from the actual `/music/` folder contents. Future chore: a small build script that scans `/music/` and regenerates `index.json` automatically.
+- No per-page default tune yet (see decisions below) — the dropdown always defaults to the first entry.
+
+---
+
+## 2026-06-12 — Session with Jason: decisions logged + sound work (violin + kick)
+
+### Decisions made this session (not all built yet)
+
+- **GitHub Pages needs a public repo.** The repo is currently private, and GitHub Pages on a private repo requires a paid plan (~$48/yr). Jason hit the "Upgrade or make this repository public" wall. Decision leaning: make the repo public (it's static, public-domain tunes, no secrets — verified: no API keys/credentials in the tree) so Pages is free. NOT yet done — Jason to flip visibility in Settings → General → Danger Zone, then enable Pages on `main` / root. Hosted URL will be `https://jasonkleinberg.github.io/fiddlehed-practice-engine/`.
+
+- **Per-page default tune = URL query param, slug-based.** For embedding on WordPress lesson pages: the player should read a `?tune=<slug>` param on load, select that tune, and fall back to the first tune if the param is missing/unknown. This makes each lesson page open to its own tune AND return to it on refresh (the URL carries the default — unlike localStorage, which would wrongly "remember" whatever tune the student last clicked). **Decision: use a SLUG, not the filename** (e.g. `?tune=oh-susanna`), so files can be renamed without breaking embed links. Requires adding a `slug` field to each `index.json` entry. NOT yet built — next-session candidate.
+
+- **`index.json` auto-generation** is a known future chore (see backfill entry above).
+
+### What was built this session: sound
+
+1. **Violin soundfont upgraded.** Swapped AlphaTab's stock `sonivox.sf2` for **FluidR3Mono_GM.sf3** (MuseScore's GM soundfont), loaded from jsDelivr's GitHub mirror: `https://cdn.jsdelivr.net/gh/musescore/MuseScore@2.1/share/sound/FluidR3Mono_GM.sf3`. Verified: HTTP 200, CORS `access-control-allow-origin: *`, ~14.5MB (under jsDelivr's 20MB gh limit), valid RIFF SoundFont, and it contains proper `Violin` / `Slow Violin` / `Strings` / `Fiddle` presets. The score's existing MIDI program (Violin) selects the patch automatically — no score change needed. (`FluidR3` also has a GM 110 "Fiddle" patch if we ever want a twangier tone — would require changing the track program.)
+   - **Caveat:** SF3 (OGG-compressed) support is "experimental" in AlphaTab 1.4.x (added in 1.4.0; we're on 1.4.3). AlphaTab ships its own `sonivox.sf3`, so it's exercised, but if SF3 ever misbehaves the fallback is the old `sonivox.sf2` URL (one-line revert). A full-quality SF2 FluidR3 is ~140MB — too big for CDN — so SF3 is the practical path for a better tone over the network.
+
+2. **MetroDrone kick drum — attempt #6, shared-AudioContext approach.** Re-added Tone.js (`tone@14.7.77`, same as MetroDrone) and the exact MetroDrone `MembraneSynth` config (`pitchDecay 0.008, octaves 2, attack 0.0006, decay 0.05, sustain 0`, triggered `C2`). The new idea vs. all prior failed attempts:
+   - **Shared AudioContext.** `ensureKick()` walks AlphaTab's (minified) object graph by instance type to find its live `AudioContext`, then `Tone.setContext(atCtx)` so Tone and AlphaTab share ONE clock + one output latency. This targets documented failure #1 (the ~30ms cross-engine offset from two separate contexts). If the context can't be found, it falls back to Tone's own context and logs a warning — degrades to the previously-known-bad behavior, not a crash.
+   - **Timing from Tone.Transport, not midi events.** Kicks fire on a `Tone.Transport.scheduleRepeat(..., "4n")` grid, BPM slaved to the tempo slider. This avoids documented failure #2 (`api.midiEventsPlayed` worker-boundary jitter, the "garage hip-hop" problem). The grid starts at Play (laying down the count-in clicks) and carries into the tune. Count-in length still uses the existing `countInBeats` logic; `api.play()` is fired after the count-in, early by `ALPHATAB_START_LATENCY_MS`.
+   - **One tuning knob:** `KICK_OFFSET_SEC` (default 0) shifts every kick earlier/later vs the melody.
+   - Pause/Stop stop the Transport grid; tempo slider updates `Tone.Transport.bpm` live.
+
+   **⚠️ NOT VERIFIED BY EAR.** This was written in a sandbox with NO audio output and NO browser (couldn't install Chromium's system libs — no root), so sync was *reasoned about, not heard*. Every prior kick verdict in this log came from Jason's ear, so this needs the same. Two known residual risks to listen for:
+   - **First-play context race:** if AlphaTab hasn't created its AudioContext by the first Play, `ensureKick` won't find it and that first session uses Tone's own context (drift). Should self-heal on the second Play. If the first play sounds off but later ones lock in, this is why — fix would be to call `ensureKick` once after the first `api.play()`.
+   - **Loop-seam drift:** the kick grid is periodic and independent of the watchdog loop seek. It stays aligned only if the loop length is an exact integer number of beats; the watchdog's ±10ms seek slop could nudge the click off the downbeat at each wrap. If it drifts only *at the loop point*, that's this.
+   - If sync is unacceptable, the reliable wooden-block metronome (`api.metronomeVolume`) is one `git revert` away.
+
+**Files changed this session:**
+- `js/player.js` — soundFont URL → FluidR3Mono SF3; replaced the oscillator-beep count-in + AlphaTab wooden-block metronome with the Tone.js shared-context kick (`findAlphaTabAudioContext`, `ensureKick`, `applyKickGain`, `startKickGrid`/`stopKickGrid`, async Play handler, KICK_OFFSET_SEC knob). Syntax-checked with `node --check`.
+- `index.html` — re-added the `tone@14.7.77` CDN `<script>`.
+
+**Next session should:**
+- Jason: **enable GitHub Pages** (make repo public first), confirm the hosted URL plays with the new violin tone.
+- Jason: **ear-test the kick** with the metronome on — is it locked to the melody? Note early/late/drift-at-loop so we can tune `KICK_OFFSET_SEC` or pick a different anchor. Verify the FluidR3 violin actually sounds better (it should, but confirm SF3 loads cleanly — watch for an AlphaTab soundfont warning in the console).
+- Build the **`?tune=<slug>` URL param** for per-page embed defaults (add `slug` to `index.json`).
+- If/when the tune list grows: the `index.json` auto-generator script.

@@ -21,7 +21,12 @@ const api = window.atApi = new alphaTab.AlphaTabApi(container, {
   player: {
     enablePlayer: true,
     enableCursor: false,
-    soundFont: "https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.4.3/dist/soundfont/sonivox.sf2",
+    // FluidR3Mono (MuseScore's GM soundfont) — much more expressive violin/strings
+    // than AlphaTab's stock sonivox. SF3 (OGG-compressed, ~14.5MB), served from
+    // jsDelivr's GitHub mirror (CORS-enabled, under the 20MB gh limit). The score's
+    // existing MIDI program (Violin) selects the patch; FluidR3 also has a "Fiddle"
+    // patch (GM 110) if we ever want to switch the track program.
+    soundFont: "https://cdn.jsdelivr.net/gh/musescore/MuseScore@2.1/share/sound/FluidR3Mono_GM.sf3",
     scrollElement: container,
   },
   display: {
@@ -241,58 +246,153 @@ function cancelCountIn() {
   countInActive = false;
 }
 
-// Plays `countInBeats` short click tones via Web Audio, then fires api.play()
-// so the first note lands on beat (countInBeats + 1).
-// For Oh Susanna (1-beat pickup in 4/4): 3 clicks, pickup on click 4.
-// For a no-pickup tune in 4/4: 4 clicks, downbeat on click 5.
-function runCustomCountIn() {
-  if (countInActive) return;
-  countInActive = true;
+// ============================================================================
+// Metronome — MetroDrone kick drum (Tone.js) on AlphaTab's shared AudioContext
+// ============================================================================
+//
+// History (see PROJECT_LOG): the kick has been attempted ~5 times. The two
+// documented failure modes were:
+//   (1) Tone.js on its OWN AudioContext → ~30ms output-latency offset vs the
+//       AlphaTab violin. Different clocks, never reconciled.
+//   (2) Driving clicks off `api.midiEventsPlayed` → worker-boundary batch
+//       jitter ("garage hip-hop"), uneven delivery to the main thread.
+//
+// This implementation targets (1) head-on: we hand Tone.js *AlphaTab's own
+// AudioContext* via `Tone.setContext`, so both engines share one clock and one
+// output latency — the cross-engine offset disappears by construction. Timing
+// comes from Tone.Transport (a sample-accurate musical grid), NOT from polling
+// or midi events, which avoids (2).
+//
+// HONEST CAVEAT: this was written in an environment with no audio output, so
+// sync was reasoned about, not heard. The real test is Jason's ear. If the kick
+// lands consistently early/late against the melody, nudge KICK_OFFSET_SEC. If it
+// drifts only at loop seams, that's the watchdog re-anchor (noted below).
+// The previous wooden-block metronome is one `git revert` away if this regresses.
 
+// Single tuning knob: shift every kick by this many seconds relative to the
+// melody. 0 = no shift. Positive = later, negative = earlier.
+const KICK_OFFSET_SEC = 0;
+
+let kickSynth = null;
+let kickGain = null;
+let toneStarted = false;
+let toneContextShared = false;
+let kickGridRunning = false;
+
+// Walk AlphaTab's object graph to find the live AudioContext it plays through.
+// Field names are minified, so we search by instance type rather than by key.
+function findAlphaTabAudioContext(root, depth = 0, seen = new Set()) {
+  if (!root || depth > 6 || seen.has(root)) return null;
+  seen.add(root);
+  if (typeof AudioContext !== "undefined" && root instanceof AudioContext) return root;
+  if (typeof webkitAudioContext !== "undefined" && root instanceof webkitAudioContext) return root;
+  let keys = [];
+  try { keys = Object.keys(root); } catch (e) { return null; }
+  for (const k of keys) {
+    let v;
+    try { v = root[k]; } catch (e) { continue; }
+    if (v && typeof v === "object") {
+      const found = findAlphaTabAudioContext(v, depth + 1, seen);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+// Lazily create the kick synth, sharing AlphaTab's AudioContext if we can find it.
+async function ensureKick() {
+  if (!toneStarted) {
+    await Tone.start();
+    toneStarted = true;
+  }
+  if (!toneContextShared) {
+    const atCtx = findAlphaTabAudioContext(api);
+    if (atCtx) {
+      try {
+        Tone.setContext(atCtx);
+        toneContextShared = true;
+        console.log(`[metronome] Sharing AlphaTab AudioContext (sampleRate ${atCtx.sampleRate}, baseLatency ${atCtx.baseLatency}).`);
+      } catch (e) {
+        console.warn("[metronome] Could not adopt AlphaTab's AudioContext; falling back to Tone's own context — sync may drift:", e);
+      }
+    } else {
+      console.warn("[metronome] AlphaTab AudioContext not found; using Tone's default context — sync may drift.");
+    }
+  }
+  if (!kickSynth) {
+    // Exact MetroDrone kick config (Tone.MembraneSynth → Gain → destination).
+    kickGain = new Tone.Gain(0).toDestination();
+    kickSynth = new Tone.MembraneSynth({
+      pitchDecay: 0.008,
+      octaves: 2,
+      envelope: { attack: 0.0006, decay: 0.05, sustain: 0 },
+    });
+    kickSynth.connect(kickGain);
+  }
+  applyKickGain();
+}
+
+function applyKickGain() {
+  if (!kickGain) return;
+  const v = parseInt(metronomeVolumeSlider.value, 10) || 0;
+  // Slider 0–100 → gain 0–1 (unity at 100). Competing only with the violin, so
+  // unity is plenty; raise the multiplier here if the kick is too quiet.
+  kickGain.gain.value = (v / 100) * 1.0;
+}
+
+// Schedule a kick on every quarter-note via Tone.Transport. Starting the
+// Transport now lays down the count-in clicks; the same grid carries straight
+// into the tune. BPM is slaved to the tempo slider.
+function startKickGrid() {
+  if (!kickSynth) return;
+  Tone.Transport.cancel();
+  Tone.Transport.bpm.value = parseInt(tempoSlider.value, 10);
+  Tone.Transport.scheduleRepeat((time) => {
+    kickSynth.triggerAttackRelease("C2", "16n", time + KICK_OFFSET_SEC);
+  }, "4n", 0);
+  Tone.Transport.position = 0;
+  Tone.Transport.start();
+  kickGridRunning = true;
+}
+
+function stopKickGrid() {
+  if (!kickGridRunning) return;
+  Tone.Transport.stop();
+  Tone.Transport.cancel();
+  kickGridRunning = false;
+}
+
+// Play with metronome on: start the kick grid (count-in begins immediately),
+// then fire api.play() after `countInBeats` so the pickup/downbeat lands on the
+// final count-in beat. Fired early by the AlphaTab startup latency.
+playBtn.addEventListener("click", async () => {
+  const metronomeOn = parseInt(metronomeVolumeSlider.value, 10) > 0;
+  if (!metronomeOn) {
+    api.play();
+    return;
+  }
+  await ensureKick();
+  cancelCountIn();
+  countInActive = true;
+  startKickGrid();
   const bpm = parseInt(tempoSlider.value, 10);
   const beatMs = 60000 / bpm;
-  const beats = countInBeats;
-
-  // Web Audio oscillator beeps — independent AudioContext just for the count-in.
-  // These don't need to stay synced past the first note; AlphaTab's own metronome
-  // handles all in-tune clicks.
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  for (let i = 0; i < beats; i++) {
-    const t = ctx.currentTime + (i * beatMs / 1000);
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    // Slightly higher pitch on beat 1 so students can feel the downbeat of the count-in.
-    osc.frequency.value = i === 0 ? 1047 : 880;
-    gain.gain.setValueAtTime(0.35, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + 0.08);
-  }
-
-  // Fire api.play() early by the AlphaTab startup latency so the pickup note
-  // arrives in sync with the last count-in beat.
-  const playDelay = Math.max(0, beats * beatMs - ALPHATAB_START_LATENCY_MS);
+  const playDelay = Math.max(0, countInBeats * beatMs - ALPHATAB_START_LATENCY_MS);
   const id = setTimeout(() => {
     if (!countInActive) return; // cancelled (e.g. Stop pressed mid-count-in)
     countInActive = false;
     api.play();
   }, playDelay);
   countInTimers.push(id);
-}
-
-playBtn.addEventListener("click", () => {
-  const metronomeOn = parseInt(metronomeVolumeSlider.value, 10) > 0;
-  if (metronomeOn) {
-    runCustomCountIn();
-  } else {
-    api.play();
-  }
 });
-pauseBtn.addEventListener("click", () => api.pause());
+
+pauseBtn.addEventListener("click", () => {
+  api.pause();
+  stopKickGrid();
+});
 stopBtn.addEventListener("click", () => {
   cancelCountIn();
+  stopKickGrid();
   api.stop();
   stopEndWatchdog();
 });
@@ -301,25 +401,11 @@ tempoSlider.addEventListener("input", () => {
   const bpm = parseInt(tempoSlider.value, 10);
   tempoReadout.textContent = bpm + " BPM";
   api.playbackSpeed = bpm / originalBPM;
+  if (kickGridRunning) Tone.Transport.bpm.value = bpm; // keep the kick in step live
 });
-
-// --- Metronome ---
-//
-// AlphaTab's built-in click on every beat + a 1-bar count-in before the tune.
-// Both ride AlphaTab's own audio clock, so they stay in sync with the melody
-// by construction. One slider controls both: 0 silences everything; any
-// non-zero value gives a 1-bar count-in (4 clicks in 4/4) followed by the
-// tune with clicks on every beat. Click sound is a stock wooden block from
-// the soundfont — not the MetroDrone kick we originally wanted, but sync is
-// the MVP priority. See PROJECT_LOG for the saga.
-function applyMetronomeVolume() {
-  const v = parseInt(metronomeVolumeSlider.value, 10) || 0;
-  api.metronomeVolume = v / 100;
-  api.countInVolume = 0; // Always 0 — we handle count-in ourselves via runCustomCountIn()
-}
 
 metronomeVolumeSlider.addEventListener("input", () => {
   const v = parseInt(metronomeVolumeSlider.value, 10);
   metronomeVolumeReadout.textContent = v === 0 ? "Off" : v + "%";
-  applyMetronomeVolume();
+  applyKickGain();
 });
