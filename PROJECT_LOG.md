@@ -373,3 +373,22 @@ Jason's feedback after the push: (a) the kick drifts out of sync with the violin
 - Also cleaned up a stale code comment that still described the abandoned shared-AudioContext approach.
 
 **Next:** Jason commit + push these two fixes; confirm spacebar works with a real press and whether the tempo re-anchor holds the kick by ear. Backlog unchanged otherwise: kick robustness (cheap patch vs one-engine), chord organ track (Oh Susanna's 12 chords ready), index.json auto-gen, violin tone, AB loop, sheet music.
+
+_(Those two fixes were pushed by Jason. Then he greenlit the one-engine kick below.)_
+
+### 2026-06-13 (cont.) — KICK MOVED INTO ALPHATAB (the real fix). Tone.js removed.
+
+Decision: stop fighting two clocks. The kick is now a percussion note inside the score's OWN MIDI, played by AlphaTab's synth — same clock as the violin, so it cannot drift.
+
+**How it works (verified live in-browser):**
+- Probed AlphaTab's API: `api.player.loadMidiFile(mf)` exists (load a custom MIDI into the synth), as do `alphaTab.midi.NoteOnEvent(track, tick, channel, noteKey, velocity)` / `NoteOffEvent`, and `api.player.setChannelVolume(channel, 0..1)`. AlphaTab's built-in metronome is a *synth-level* feature (not in the score MIDI), so its note can't be remapped — hence manual injection.
+- `injectKickIntoPlayback()` (called once per tune-load from `playerReady`, guarded by `kickInjected` because `loadMidiFile` re-fires `playerReady`): regenerates the score MIDI via `MidiFileGenerator`, adds a kick `NoteOn`/`NoteOff` (GM note **36**, channel **9**, vel 110) on every beat (`for t = 0; t < musicalEndTick; t += ticksPerBeat`), sorts events by tick, and `loadMidiFile`s it. Verified: 65 kicks for Oh Susanna, all on the beat grid (0, 960, 1920…), EndOfTrack still last at 62400, no console errors.
+- Volume: `api.player.setChannelVolume(9, slider/100)`, re-applied after each load and on Play (channel volumes reset on load).
+- Count-in: AlphaTab's native `api.countInVolume` (one bar). `api.metronomeVolume` stays 0 so AlphaTab doesn't layer its own click over the injected kick. **Caveat:** the count-in click is AlphaTab's own sound, not the kick — minor polish item if it bugs Jason.
+- Tempo: a single `api.playbackSpeed` now scales BOTH violin and kick (they're one MIDI). Verified live: yanked tempo to 170 BPM mid-play, playback kept advancing (52712 → 56770), no stop, no drift possible.
+
+**What got deleted:** Tone.js CDN tag; MembraneSynth + Gain; `ensureKick`/`applyKickGain`/`scheduleKickRepeat`/`startKickGrid`/`stopKickGrid`/`reanchorKickToMelody`; the custom count-in (`countInBeats`/`countInTimers`/`countInActive`/`cancelCountIn`/`ALPHATAB_START_LATENCY_MS`); `KICK_OFFSET_SEC` + the `window.__kickOffsetSec` live knob. player.js is much smaller and simpler. Spacebar handler and the loop watchdog are unchanged.
+
+**NOT YET VERIFIED BY EAR (Jason's call):** the FluidR3 GM kick-drum *sound* (could be a touch cheesy — fallbacks: note 35 acoustic bass drum, or 37 side-stick for something drier), and whether the AlphaTab count-in click clashes with the kick. Sync itself is guaranteed by construction.
+
+**NOT YET PUSHED.** index.html (Tone tag removed) + js/player.js are on disk. Next: Jason commit + push, then ear-test the kick sound + count-in.
