@@ -311,6 +311,15 @@ function injectKickIntoPlayback() {
     api.score, api.settings, new alphaTab.midi.AlphaSynthMidiFileHandler(mf)
   );
   gen.generate();
+  // Set up channel 9 as the GM drum channel. The melody channels automatically
+  // get a program change AND a CC7 base volume from the generator; our injected
+  // channel got neither, so the kit was never loaded and the channel volume sat
+  // at zero — the notes fired into silence. Program 0 = standard kit (channel 9
+  // is GM percussion), CC7 gives it an audible base that setChannelVolume scales.
+  mf.addEvent(new alphaTab.midi.ProgramChangeEvent(0, 0, KICK_CHANNEL, 0));
+  mf.addEvent(new alphaTab.midi.ControlChangeEvent(
+    0, 0, KICK_CHANNEL, alphaTab.midi.ControllerType.VolumeCoarse, 120
+  ));
   let count = 0;
   for (let t = 0; t < musicalEndTick; t += ticksPerBeat) {
     mf.addEvent(new alphaTab.midi.NoteOnEvent(0, t, KICK_CHANNEL, KICK_NOTE, KICK_VELOCITY));
