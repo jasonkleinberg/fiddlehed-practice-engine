@@ -362,4 +362,14 @@ Built and verified live in-browser. `music/index.json` now has a `slug` per tune
 
 **Cache note:** localhost (Python `http.server`) + Chrome cache `player.js` aggressively — a plain reload runs stale JS; a HARD reload (Cmd+Shift+R) is required to pick up edits. Bit us repeatedly. If stale assets become a problem for the live embed after pushes, add a `?v=` cache-bust to the `player.js`/soundfont URLs.
 
-**STILL NOT PUSHED.** Everything from 2026-06-13 (violin automation fix, kick on Tone's own context + live offset knob, `?tune=` embed default, slugs) is on disk only. Pages/jkleinberg.com still serves the original piano/no-kick/no-embed version. Next: commit + push.
+**~~STILL NOT PUSHED~~ → PUSHED by Jason.** Violin automation fix, kick on Tone's own context + live offset knob, `?tune=` embed default, and slugs are now live on jkleinberg.com.
+
+### 2026-06-13 (cont.) — two post-deploy bug fixes (on disk, NOT yet pushed)
+
+Jason's feedback after the push: (a) the kick drifts out of sync with the violin after a big tempo change, (b) the spacebar no longer toggles play/pause.
+
+- **Tempo-change desync — partial fix (the two-engine tax).** Root: the kick (Tone.Transport) and the melody (AlphaTab) run on independent clocks; each big tempo move nudges them apart and the drift accumulates. We can't perfectly lock two clocks, but we can re-phase: new `reanchorKickToMelody()` reads how far the melody is through its current beat (`ticksPerBeat` is now stored globally), sets `Tone.Transport.seconds` to the same fraction, and reschedules the kick — so the next quarter-note lands on the melody's next beat. Wired to the tempo slider's **`change`** event (drag release), not `input`, to avoid re-phasing mid-drag (which would stutter). NOT ear-verified (automation can't keep Tone's context alive). **If extreme tempo swings still drift, the real fix is one-engine** — move the click into AlphaTab (built-in metronome or an injected percussion note), trading the MetroDrone MembraneSynth sound for AlphaTab's drum. Flagged as the standing "make the kick trustworthy" option.
+- **Spacebar play/pause — fixed.** It used to work only because the Play button kept focus; the control rewrites broke that. Added an explicit `document` keydown handler: Space → toggle play/pause (`playerState === 1 ? pauseBtn : playBtn`).click(), `preventDefault` to stop page scroll, ignored when the tune `<select>` is focused. Logic verified in-browser by dispatching a synthetic Space event (0→1→0). Real-keypress confirmation is Jason's (automation can't inject a trusted keystroke).
+- Also cleaned up a stale code comment that still described the abandoned shared-AudioContext approach.
+
+**Next:** Jason commit + push these two fixes; confirm spacebar works with a real press and whether the tempo re-anchor holds the kick by ear. Backlog unchanged otherwise: kick robustness (cheap patch vs one-engine), chord organ track (Oh Susanna's 12 chords ready), index.json auto-gen, violin tone, AB loop, sheet music.

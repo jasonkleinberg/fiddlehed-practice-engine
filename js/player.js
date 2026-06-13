@@ -96,6 +96,9 @@ async function loadTune(file, title) {
 // plays on the first pass). If not, it's 0.
 let loopStartTick = 0;
 let musicalEndTick = 0;
+// Ticks per quarter-note beat for the current tune. Used to re-phase the kick
+// metronome to the melody after a tempo change (see reanchorKickToMelody).
+let ticksPerBeat = 0;
 // The tune's native BPM, read from the score. The tempo slider value is
 // the literal BPM the student wants; playbackSpeed = desiredBPM / originalBPM.
 let originalBPM = 120;
@@ -163,7 +166,7 @@ api.scoreLoaded.on((score) => {
   const refBar = score.masterBars[hasPickup ? 1 : 0];
   if (refBar) {
     const barDur = refBar.calculateDuration();
-    const ticksPerBeat = barDur / refBar.timeSignatureNumerator;
+    ticksPerBeat = barDur / refBar.timeSignatureNumerator;
     const pickupBeats = ticksPerBeat > 0 ? loopStartTick / ticksPerBeat : 0;
     countInBeats = refBar.timeSignatureNumerator - pickupBeats;
   }
@@ -285,27 +288,24 @@ function cancelCountIn() {
 }
 
 // ============================================================================
-// Metronome — MetroDrone kick drum (Tone.js) on AlphaTab's shared AudioContext
+// Metronome — MetroDrone kick drum (Tone.js MembraneSynth)
 // ============================================================================
 //
-// History (see PROJECT_LOG): the kick has been attempted ~5 times. The two
-// documented failure modes were:
-//   (1) Tone.js on its OWN AudioContext → ~30ms output-latency offset vs the
-//       AlphaTab violin. Different clocks, never reconciled.
+// History (see PROJECT_LOG): the kick has been attempted many times. Two
+// documented dead-ends:
+//   (1) Sharing AlphaTab's AudioContext via Tone.setContext → froze Tone's
+//       clock; the scheduled kicks went silent.
 //   (2) Driving clicks off `api.midiEventsPlayed` → worker-boundary batch
 //       jitter ("garage hip-hop"), uneven delivery to the main thread.
 //
-// This implementation targets (1) head-on: we hand Tone.js *AlphaTab's own
-// AudioContext* via `Tone.setContext`, so both engines share one clock and one
-// output latency — the cross-engine offset disappears by construction. Timing
-// comes from Tone.Transport (a sample-accurate musical grid), NOT from polling
-// or midi events, which avoids (2).
-//
-// HONEST CAVEAT: this was written in an environment with no audio output, so
-// sync was reasoned about, not heard. The real test is Jason's ear. If the kick
-// lands consistently early/late against the melody, nudge KICK_OFFSET_SEC. If it
-// drifts only at loop seams, that's the watchdog re-anchor (noted below).
-// The previous wooden-block metronome is one `git revert` away if this regresses.
+// What ships: Tone runs on its OWN AudioContext (guaranteed sound), and timing
+// comes from a Tone.Transport quarter-note grid (smooth, no midi-event jitter).
+// The cost of a separate context is a roughly CONSTANT offset vs the melody,
+// compensated by KICK_OFFSET_SEC. The remaining weakness is that two independent
+// clocks drift on a big tempo change — reanchorKickToMelody() snaps the kick
+// back onto the melody's beat when the tempo slider is released. If that proves
+// insufficient, the bulletproof fix is to move the click into AlphaTab's own
+// engine (one clock), trading the MembraneSynth sound for AlphaTab's drum.
 
 // Single tuning knob: shift every kick by this many seconds relative to the
 // melody. Positive = later, negative = earlier. Default -0.02 (fire 20ms early)
@@ -355,6 +355,16 @@ function applyKickGain() {
   kickGain.gain.value = (v / 100) * 1.0;
 }
 
+// Register the every-quarter-note kick on Tone.Transport.
+function scheduleKickRepeat() {
+  Tone.Transport.scheduleRepeat((time) => {
+    // window.__kickOffsetSec lets us dial the offset live in the console while
+    // tuning by ear; falls back to the committed constant.
+    const off = (typeof window.__kickOffsetSec === "number") ? window.__kickOffsetSec : KICK_OFFSET_SEC;
+    kickSynth.triggerAttackRelease("C2", "16n", time + off);
+  }, "4n", 0);
+}
+
 // Schedule a kick on every quarter-note via Tone.Transport. Starting the
 // Transport now lays down the count-in clicks; the same grid carries straight
 // into the tune. BPM is slaved to the tempo slider.
@@ -362,12 +372,7 @@ function startKickGrid() {
   if (!kickSynth) return;
   Tone.Transport.cancel();
   Tone.Transport.bpm.value = parseInt(tempoSlider.value, 10);
-  Tone.Transport.scheduleRepeat((time) => {
-    // window.__kickOffsetSec lets us dial the offset live in the console while
-    // tuning by ear; falls back to the committed constant.
-    const off = (typeof window.__kickOffsetSec === "number") ? window.__kickOffsetSec : KICK_OFFSET_SEC;
-    kickSynth.triggerAttackRelease("C2", "16n", time + off);
-  }, "4n", 0);
+  scheduleKickRepeat();
   Tone.Transport.position = 0;
   Tone.Transport.start();
   kickGridRunning = true;
@@ -378,6 +383,26 @@ function stopKickGrid() {
   Tone.Transport.stop();
   Tone.Transport.cancel();
   kickGridRunning = false;
+}
+
+// The kick grid (Tone.Transport) and the melody (AlphaTab) run on independent
+// clocks. A big tempo change nudges them out of phase — the melody re-seeks
+// slightly and the kick drifts off the beat. We can't keep two clocks perfectly
+// locked, but we CAN snap the kick back onto the melody's beat after the tempo
+// settles: re-phase the Transport so its next quarter-note boundary lands on the
+// melody's next beat. Called when the tempo slider is released ("change").
+function reanchorKickToMelody() {
+  if (!kickGridRunning || api.playerState !== 1 || !ticksPerBeat) return;
+  const bpm = parseInt(tempoSlider.value, 10);
+  // How far the melody is through its current beat, as a fraction (0 → 1).
+  const since = api.tickPosition - loopStartTick;
+  const intoBeat = (((since % ticksPerBeat) + ticksPerBeat) % ticksPerBeat) / ticksPerBeat;
+  Tone.Transport.cancel();
+  Tone.Transport.bpm.value = bpm;
+  // Put the transport the same fraction into ITS beat, so the next "4n" boundary
+  // coincides with the melody's next beat.
+  Tone.Transport.seconds = intoBeat * (60 / bpm);
+  scheduleKickRepeat();
 }
 
 // Play with metronome on: start the kick grid (count-in begins immediately),
@@ -421,9 +446,25 @@ tempoSlider.addEventListener("input", () => {
   api.playbackSpeed = bpm / originalBPM;
   if (kickGridRunning) Tone.Transport.bpm.value = bpm; // keep the kick in step live
 });
+// When the drag settles, snap the kick back into phase with the melody. Doing
+// this on "change" (release) rather than every "input" avoids re-phasing on
+// every pixel of the drag, which would stutter the click.
+tempoSlider.addEventListener("change", reanchorKickToMelody);
 
 metronomeVolumeSlider.addEventListener("input", () => {
   const v = parseInt(metronomeVolumeSlider.value, 10);
   metronomeVolumeReadout.textContent = v === 0 ? "Off" : v + "%";
   applyKickGain();
+});
+
+// Spacebar toggles play/pause. This used to work for free because the Play
+// button kept focus, but the control rewrites broke that. Bind it explicitly so
+// it works no matter what's focused (except the tune dropdown, where Space
+// should open the list). preventDefault stops the page from scrolling.
+document.addEventListener("keydown", (e) => {
+  if (e.code !== "Space" && e.key !== " ") return;
+  const tag = (e.target && e.target.tagName) || "";
+  if (tag === "SELECT") return;
+  e.preventDefault();
+  (api.playerState === 1 ? pauseBtn : playBtn).click();
 });
