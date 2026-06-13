@@ -61,7 +61,7 @@ async function loadTune(file, title) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const tunes = await res.json();
 
-    tunes.forEach((tune, i) => {
+    tunes.forEach((tune) => {
       const opt = document.createElement("option");
       opt.value = tune.file;
       opt.textContent = tune.title;
@@ -74,8 +74,17 @@ async function loadTune(file, title) {
       if (selected) loadTune(selected.file, selected.title);
     });
 
-    // Load the first tune automatically.
-    if (tunes.length > 0) loadTune(tunes[0].file, tunes[0].title);
+    // Pick the initial tune. A `?tune=<slug>` URL param wins — this is how a
+    // WordPress lesson page embeds a specific tune AND returns to it on refresh
+    // (the default lives in the URL, not in browser storage, so a student who
+    // wanders to another tune snaps back on reload). Missing/unknown slug falls
+    // back to the first tune so an embed code typo never blanks the player.
+    const requestedSlug = new URLSearchParams(window.location.search).get("tune");
+    const initial = (requestedSlug && tunes.find((t) => t.slug === requestedSlug)) || tunes[0];
+    if (initial) {
+      tuneSelect.value = initial.file;
+      loadTune(initial.file, initial.title);
+    }
   } catch (err) {
     console.error("Failed to load tune index:", err);
     statusEl.textContent = "Failed to load tune index: " + err.message;
@@ -107,11 +116,39 @@ let countInActive = false;
 // sample. We fire play() this many ms early so the pickup lands on the last beat.
 const ALPHATAB_START_LATENCY_MS = 20;
 
+// GM program forced onto the melody track regardless of what the MusicXML asks
+// for. Our Sibelius exports specify "Bright Piano" (program 1), so without this
+// override every tune plays as a piano no matter how good the soundfont is.
+// 40 = Violin. (41 = Viola, 42 = Cello, 110 = Fiddle if we want a twangier tone.)
+const MELODY_PROGRAM = 40;
+
 api.scoreLoaded.on((score) => {
   statusEl.textContent = "Loading soundfont…";
   musicalEndTick = 0; // reset; will be set accurately in playerReady after MIDI expansion
   detectAndFlagPickup(score);
   loopStartTick = computeLoopStartTick(score);
+
+  // Force the melody onto a violin patch. Two things fight us here, both from
+  // the Sibelius export:
+  //   1. The track's playbackInfo program is piano — set it to Violin.
+  //   2. The score also carries an *Instrument automation* on bar 0 beat 0 with
+  //      value 0 (piano). AlphaTab emits that as a program-change AFTER the
+  //      track program, so it clobbers the violin on the melody channel. We have
+  //      to rewrite that automation too, or the tune always plays as piano.
+  score.tracks.forEach((t) => {
+    if (t.playbackInfo) t.playbackInfo.program = MELODY_PROGRAM;
+    t.staves.forEach((st) => st.bars.forEach((bar) =>
+      (bar.voices || []).forEach((v) => (v.beats || []).forEach((b) =>
+        (b.automations || []).forEach((a) => {
+          if (a.type === alphaTab.model.AutomationType.Instrument) a.value = MELODY_PROGRAM;
+        })
+      ))
+    ));
+  });
+  // Regenerate the MIDI so the pickup flag, the program change, and the
+  // automation rewrite all take effect. (detectAndFlagPickup no longer calls
+  // this itself — see below.)
+  api.loadMidiForScore();
 
   // Initialize the tempo slider to the tune's native BPM.
   originalBPM = score.tempo || 120;
@@ -189,7 +226,8 @@ function detectAndFlagPickup(score) {
 
   if (actualDuration > 0 && actualDuration < fullBarDuration) {
     firstBar.isAnacrusis = true;
-    api.loadMidiForScore();
+    // MIDI regeneration is done once by the caller (scoreLoaded) after the
+    // program override, so we don't call api.loadMidiForScore() here.
     console.log(`[pickup] First bar is a pickup (${actualDuration}/${fullBarDuration} ticks) — flagged as anacrusis.`);
   }
 }
@@ -270,54 +308,31 @@ function cancelCountIn() {
 // The previous wooden-block metronome is one `git revert` away if this regresses.
 
 // Single tuning knob: shift every kick by this many seconds relative to the
-// melody. 0 = no shift. Positive = later, negative = earlier.
-const KICK_OFFSET_SEC = 0;
+// melody. Positive = later, negative = earlier. Default -0.02 (fire 20ms early)
+// compensates a measured ~19ms scheduling lag of the kick behind the melody
+// beat (the constant separate-AudioContext latency). Tune by ear: if the kick
+// sounds late, make this more negative; if early, less.
+const KICK_OFFSET_SEC = -0.02;
 
 let kickSynth = null;
 let kickGain = null;
 let toneStarted = false;
-let toneContextShared = false;
 let kickGridRunning = false;
 
-// Walk AlphaTab's object graph to find the live AudioContext it plays through.
-// Field names are minified, so we search by instance type rather than by key.
-function findAlphaTabAudioContext(root, depth = 0, seen = new Set()) {
-  if (!root || depth > 6 || seen.has(root)) return null;
-  seen.add(root);
-  if (typeof AudioContext !== "undefined" && root instanceof AudioContext) return root;
-  if (typeof webkitAudioContext !== "undefined" && root instanceof webkitAudioContext) return root;
-  let keys = [];
-  try { keys = Object.keys(root); } catch (e) { return null; }
-  for (const k of keys) {
-    let v;
-    try { v = root[k]; } catch (e) { continue; }
-    if (v && typeof v === "object") {
-      const found = findAlphaTabAudioContext(v, depth + 1, seen);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-// Lazily create the kick synth, sharing AlphaTab's AudioContext if we can find it.
+// Lazily create the kick synth on Tone's OWN AudioContext.
+//
+// NOTE: we deliberately do NOT adopt AlphaTab's AudioContext. Doing so froze
+// Tone's internal clock and the scheduled kicks went silent. The cost of using
+// a separate context is a roughly CONSTANT output-latency offset vs the melody
+// (~20-40ms), which is exactly what KICK_OFFSET_SEC compensates. A constant
+// offset is tunable; the jitter that sank the midiEventsPlayed attempts is not,
+// and the Tone.Transport grid avoids that jitter. So: guaranteed sound here,
+// dial the offset to taste.
 async function ensureKick() {
   if (!toneStarted) {
     await Tone.start();
     toneStarted = true;
-  }
-  if (!toneContextShared) {
-    const atCtx = findAlphaTabAudioContext(api);
-    if (atCtx) {
-      try {
-        Tone.setContext(atCtx);
-        toneContextShared = true;
-        console.log(`[metronome] Sharing AlphaTab AudioContext (sampleRate ${atCtx.sampleRate}, baseLatency ${atCtx.baseLatency}).`);
-      } catch (e) {
-        console.warn("[metronome] Could not adopt AlphaTab's AudioContext; falling back to Tone's own context — sync may drift:", e);
-      }
-    } else {
-      console.warn("[metronome] AlphaTab AudioContext not found; using Tone's default context — sync may drift.");
-    }
+    console.log(`[metronome] Tone started on its own context (sampleRate ${Tone.context.sampleRate}).`);
   }
   if (!kickSynth) {
     // Exact MetroDrone kick config (Tone.MembraneSynth → Gain → destination).
@@ -348,7 +363,10 @@ function startKickGrid() {
   Tone.Transport.cancel();
   Tone.Transport.bpm.value = parseInt(tempoSlider.value, 10);
   Tone.Transport.scheduleRepeat((time) => {
-    kickSynth.triggerAttackRelease("C2", "16n", time + KICK_OFFSET_SEC);
+    // window.__kickOffsetSec lets us dial the offset live in the console while
+    // tuning by ear; falls back to the committed constant.
+    const off = (typeof window.__kickOffsetSec === "number") ? window.__kickOffsetSec : KICK_OFFSET_SEC;
+    kickSynth.triggerAttackRelease("C2", "16n", time + off);
   }, "4n", 0);
   Tone.Transport.position = 0;
   Tone.Transport.start();

@@ -1,4 +1,4 @@
 [
-  { "file": "Oh Susanna.musicxml", "title": "Oh Susanna" },
-  { "file": "Orange Blossom Special.musicxml", "title": "Orange Blossom Special" }
+  { "file": "Oh Susanna.musicxml", "title": "Oh Susanna", "slug": "oh-susanna" },
+  { "file": "Orange Blossom Special.musicxml", "title": "Orange Blossom Special", "slug": "orange-blossom-special" }
 ]
