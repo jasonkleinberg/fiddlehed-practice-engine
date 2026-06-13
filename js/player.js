@@ -145,11 +145,13 @@ api.scoreLoaded.on((score) => {
   // this itself — see below.)
   api.loadMidiForScore();
 
-  // Initialize the tempo slider to the tune's native BPM.
+  // Read the tune's native BPM (needed for the playbackSpeed math), but start
+  // the student at a slow, practice-friendly 80 BPM rather than full tempo.
   originalBPM = score.tempo || 120;
-  tempoSlider.value = originalBPM;
-  tempoReadout.textContent = originalBPM + " BPM";
-  api.playbackSpeed = 1;
+  const startBPM = 80;
+  tempoSlider.value = startBPM;
+  tempoReadout.textContent = startBPM + " BPM";
+  api.playbackSpeed = startBPM / originalBPM;
 
   // Ticks per beat, from the first FULL bar (masterBars[1] if bar 0 is a pickup),
   // so the time signature reflects the actual meter. Used to place the kick.
