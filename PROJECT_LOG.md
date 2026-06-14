@@ -404,3 +404,70 @@ Decision: stop fighting two clocks. The kick is now a percussion note inside the
 **DEFERRED nicety — pickup-aware count-in.** Jason's ask: for a pickup tune like Oh Susanna, ideally you'd hear 3 count-in clicks, then the pickup enters on click 4, then the kick body from bar 1 — i.e. the count-in should OVERLAP the pickup. AlphaTab's native count-in (what we use now) is always a full bar BEFORE the music, so the pickup doesn't tuck into it. Doing it right means either injecting count-in clicks into the MIDI (blocked by no negative ticks) or shifting the whole melody by a count-in bar and recomputing loop boundaries — fiddly. Jason explicitly said skip-if-hard and is happy with the current behavior. Parked as a polish item, not MVP-critical.
 
 **NOT YET PUSHED:** index.html (tempo 80 / metronome 25 defaults) + js/player.js (80 BPM start) + the shortcode left-justify edit. Jason to push.
+
+---
+
+## 2026-06-13 — Play-along design + import tooling + outsourcing pipeline (Cowork session with Jason)
+
+**What happened:**
+- Defined the **new-song workflow** (see `NEW_SONG_WORKFLOW.md`): Dropbox source → curate (match to published lesson) → ingest → auto-extract metadata → tabs (non-blocking) → output to `/music/` + `index.json`.
+- Built and tested **`scripts/import_song.py`**: handles `.musicxml`/`.mxl`, extracts title/key/time-sig/tempo, slugifies, copies to `/music/`, writes full `index.json` record, runs Tabulator as draft tabs. Re-run safe.
+- Built **`scripts/match_lessons.py`** (curation gate + gap report → `LIBRARY_GAP_REPORT.md`).
+- **Big inventory finding:** Dropbox holds **387 Sibelius `.sib` files**, only 52 exported to MusicXML. The real bottleneck is Sibelius→MusicXML export (Jason-side / outsourced — `.sib` is binary, unreadable here). ~36 unique in-scope melody tunes after excluding viola/duet/double-stop/variation/someday.
+- **Chord finding:** 12 of 17 in-scope XML tunes already carry `<harmony>` chord symbols → can prototype the chord player now, no Sibelius work.
+
+**Decisions locked:**
+- **Scope = melody-only** "meat and potatoes" tunes (melody + beat + simple chords). Drop duets, double-stops, variations, viola.
+- **Play-along = 3 layers on ONE engine (Tone.js):** melody (`Tone.Sampler`, real violin samples), organ chords (Tone.js Hammond/sine synth reading `<harmony>`), kick (reuse MetroDrone `Tone.MembraneSynth`). Per-layer volume sliders (copy MetroDrone gain pattern) + existing tempo slider.
+- **AlphaTab dropped for now** — it only plays notated notes, not `<harmony>` symbols, and can't make the MetroDrone kick. May return later only for on-screen notation.
+- Lesson YAMLs are a **URL-autofill helper only, not the scope gate** (incomplete — post-core/newer lessons aren't in the dataset).
+
+**Outsourcing pipeline (this session's deliverables):**
+- Copied 60 in-scope `.sib` → Dropbox `_Practice Engine - Sibelius for Export/` (shareable) + `00 - INVENTORY (canonical selection).csv` (36 tunes, 10 with multiple versions to pick from).
+- `00 - WORKER INSTRUCTIONS.md` (airtight phased SOP) in that folder; `docs/upwork-job-post.md` in the repo.
+- Airtight process: worker exports ALL → we auto-scan (chords/dedupe) → Jason picks canonical + we flag missing chords → worker adds simple I-IV-V chords → automated QC gate ties to payment milestones.
+
+**Next:**
+- **New thread (Fable model):** build the 3-layer player prototype — see `NEW_THREAD_PROMPT.md`.
+- **This track:** Jason posts the Upwork job; on Phase 1 exports return, run `match_lessons.py`/chord scan to QC + pick canonical versions.
+
+---
+
+## 2026-06-13 (cont.) — 3-layer Tone.js play-along prototype BUILT (Cowork session)
+
+**What happened:**
+- Built the locked 3-layer player as a **standalone prototype** — `playalong.html` + `js/playalong.js` — so the live AlphaTab embed (`index.html`/`js/player.js`) is untouched and this stays git-revertable. Tone.js `14.7.77` via CDN (matches MetroDrone). No build step.
+- **Prototype tune = Oh Susanna**, NOT the Mississippi Sawyer / Fire on the Mountain named in `NEW_THREAD_PROMPT.md` — neither of those is in `/music/` yet (only Oh Susanna + Orange Blossom are). Oh Susanna is already chorded (12 `<harmony>`), so it's the zero-friction prototype. Swapping tunes is one constant (`TUNE_FILE`) — fully data-driven.
+
+**What's in it (all three layers on ONE `Tone.Transport`):**
+1. **Melody** — `Tone.Sampler` loading real violin samples from `nbrosowsky/tonejs-instruments` via jsDelivr (15 confirmed-present samples: A/C/E/G across oct 3–7; Sampler interpolates). This is the upgrade over the old sonivox tone.
+2. **Organ** — `Tone.PolySynth(Tone.Synth)` with stacked-sine partials `[1,0.6,0.4,0.25,0.15,0.1]` (drawbar-ish), soft envelope, sitting one octave low (root oct 3) at −8 dB. Plays sustained triads read from `<harmony>`; each chord holds until the next change.
+3. **Kick** — the exact MetroDrone `Tone.MembraneSynth` (`pitchDecay 0.008, octaves 2, attack 0.0006, decay 0.05, sustain 0`, `C2`), one hit per beat via `Transport.scheduleRepeat("4n")`.
+- **Per-layer volume** = each instrument → its own `Tone.Gain` → destination; sliders `rampTo(v/100, 0.03)`. **Tempo** = `Transport.bpm` (one knob scales all three — that's the whole point of one engine).
+- Whole tune loops (`Transport.loop`, `loopEnd` = total length incl. pickup). Spacebar = play/pause.
+
+**The MusicXML parser (`parseMusicXML`, the real work):**
+- Vanilla `DOMParser`. Walks each `<measure>` in document order tracking a global tick cursor; handles `<note>` (pitch/alter/octave/duration), `<chord/>` (shares prior onset, no cursor advance), `<rest/>`, `<backup>`/`<forward>`, and tie-merging (tieStop folds into the open same-pitch note). `<harmony>` → triad/7th MIDI built from root-step/alter/kind, onset = current cursor. Times emitted in quarter-note **beats**, then converted to Tone `bars:beats:sixteenths` so `Tone.Part` stays **tempo-relative** (BPM changes reschedule for free; durations recomputed from live BPM in the callback).
+- Divisions locked at first read (256 here); assumes constant divisions + 4/4-ish grid (fine for the fiddle repertoire; would need work for tempo/meter changes mid-tune).
+
+**Verification:**
+- `node --check` clean.
+- **Parser validated headless** (linkedom DOM) against the real Oh Susanna XML: divisions 256, 4/4, **65 total beats** (1-beat pickup + 16 bars), **59 notes**, **12 chords**. Spot-check correct: pickup `D4 E4` eighths → `F#4 A4…`; chords land right (`D` at beat 1 = bar-2 downbeat, `A` beat 13, `G` beat 33) with correct triads (D=[D3 F#3 A3], A=[A3 C#4 E4], G=[G3 B3 D4]); melody range D4–B4, inside the sample map.
+- **NOT ear-verified / not run in a browser.** This sandbox has no audio and I can't serve to Jason's Chrome from here — same as every prior sound verdict, the ear test is Jason's. Tone scheduling is standard API; sync is guaranteed by construction (one clock), so the open question is purely *sound* (violin sample quality, organ timbre/level, kick level) and that the page boots clean in a real browser.
+
+**Risks to listen for / known limits:**
+- Loop includes the pickup, so it wraps pickup-to-pickup (musically fine for an AABB tune; revisit if Jason wants pickup-once-then-body like the old AlphaTab watchdog).
+- No count-in yet (old app had AlphaTab's 1-bar count-in). Kick just starts on beat 1.
+- Organ uses block triads (no strum/voice-leading) — the "just enough chordal bed" Jason scoped.
+- Tie-merge path is unexercised (Oh Susanna has no ties) — logic is there, untested by a real tied tune.
+
+**Files added this session:**
+- `playalong.html` — markup: transport, tempo slider, 3 layer-volume sliders, Tone CDN.
+- `js/playalong.js` — parser + 3-layer Tone engine (well-commented).
+- (untouched: `index.html`, `js/player.js` — the AlphaTab app still works.)
+
+**Next session should:**
+- Jason: serve locally (`python3 -m http.server 8000`), open `localhost:8000/playalong.html`, **hard-refresh**, press Play. Ear-test: (a) violin sample tone vs. old sonivox, (b) organ level/timbre under the melody, (c) kick level + lock to the beat (should be dead-on — one clock), (d) all three volume sliders + tempo. Report what to tune.
+- If sound is good: decide whether `playalong.html` **replaces** `index.html` (promote to the embed) or stays a parallel page while the AlphaTab one keeps serving.
+- Then generalize: tune picker / `?tune=<slug>` like the AlphaTab app, and confirm a no-chord tune (Orange Blossom) just plays melody+kick with a silent organ.
+- Want me to drive a live Chrome debug pass? Start the server and say so — I'll connect via Claude-in-Chrome, check the console, and confirm the three layers schedule (counts/state), the way the earlier live-debug sessions worked.
