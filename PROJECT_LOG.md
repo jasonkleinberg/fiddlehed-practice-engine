@@ -484,3 +484,12 @@ Jason ear-tested the 3-layer prototype live for the first time. Verdict: **violi
 **NOT ear-verified** (same as always — no audio here). **NOT pushed** — Jason to commit/push, hard-refresh `playalong.html`, and listen for: kick now present and mixable, and the loop wrapping pickup-into-bar-1 with no dead beat.
 
 **Sibelius-export track finding:** Bob Zawalich's Sibelius plugin **"Export Folder of Scores in Multiple Formats"** batch-exports a whole folder (subfolders preserved) to MusicXML, Sibelius 7.1–26.x, modern `.musicxml` extension. That likely makes Phase 1 of the Upwork job (mechanical export of all `.sib`) a DIY afternoon instead of a hire — the human is then only needed for Phase 2 (adding chord symbols to tunes that lack them). Decision pending Jason: DIY export vs post the job as drafted.
+
+### 2026-07-01 (cont.) — round 2 after Jason's re-test (on disk, NOT pushed)
+
+Jason confirmed: loop turnaround now correct, kick louder but STILL not loud enough (has to duck melody+organ to play along), and **melody lags at faster tempos**.
+
+- **Kick round 2:** synth volume +10 → **+16 dB**, decay 0.05 → **0.1** (more body). Goal: kick can sit on top of the mix at max slider.
+- **Melody lag — root cause is the samples, not the clock.** Real violin samples have a soft bow-attack onset; the pitch speaks ~40ms after trigger. Against the instant-attack kick this reads as dragging, proportionally worse at fast tempos (40ms is a bigger slice of a shorter beat). Fix: **melody lead** — melody notes trigger `window.__melodyLead` seconds early (default **0.04**), clamped to now so the first note can't schedule in the past. Live-tunable from the console (`window.__melodyLead = 0.06`) so Jason can dial it by ear at a fast tempo before we hard-code the final value.
+
+Ear-test protocol for Jason: push, hard-refresh, crank tempo (140+), check (a) kick loud enough to lead the mix, (b) melody sits ON the kick, not behind it. If melody still drags, open DevTools console and try `window.__melodyLead = 0.06` (takes effect immediately, no reload); report the value that locks in.

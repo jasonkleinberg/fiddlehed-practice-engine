@@ -270,13 +270,13 @@
     engine.kick = new Tone.MembraneSynth({
       pitchDecay: 0.008,
       octaves: 2,
-      envelope: { attack: 0.0006, decay: 0.05, sustain: 0 },
+      envelope: { attack: 0.0006, decay: 0.1, sustain: 0 },
     }).connect(engine.kickGain);
     // The MetroDrone patch is a short 50ms thud at C2 — fine solo, but buried
-    // under violin samples + organ at unity gain. Boost the synth itself so
-    // the slider has real headroom. (If still weak: decay 0.1–0.2 adds body,
-    // or trigger C1 for more sub / E2 for more knock.)
-    engine.kick.volume.value = 10;
+    // under violin samples + organ at unity gain. Boost the synth hard so the
+    // kick can sit ON TOP of the mix at max slider (Jason: +10 wasn't enough;
+    // decay also lengthened 0.05→0.1 for more body/audibility).
+    engine.kick.volume.value = 16;
 
     engine.built = true;
   }
@@ -286,10 +286,18 @@
     const s = engine.score;
 
     // Melody — one Part of note events.
+    // MELODY LEAD: real violin samples have a soft bow-attack onset, so the
+    // pitch "speaks" ~40ms after trigger. Against the instant-attack kick that
+    // reads as the melody dragging, worst at fast tempos. Compensate by
+    // triggering melody notes early by a fixed wall-clock lead. Clamped so the
+    // first note can't be scheduled in the past. Live-tunable in the console:
+    // window.__melodyLead = 0.06 (seconds).
+    window.__melodyLead = window.__melodyLead ?? 0.04;
     engine.melodyPart = new Tone.Part((time, ev) => {
       const dur = ev.durBeats * (60 / Tone.Transport.bpm.value);
+      const when = Math.max(time - window.__melodyLead, Tone.now());
       engine.sampler.triggerAttackRelease(
-        Tone.Frequency(ev.midi, "midi").toNote(), dur, time);
+        Tone.Frequency(ev.midi, "midi").toNote(), dur, when);
     }, s.notes.map((n) => [beatToBBS(n.beat), n]));
     engine.melodyPart.start(0);
 
