@@ -471,3 +471,16 @@ Decision: stop fighting two clocks. The kick is now a percussion note inside the
 - If sound is good: decide whether `playalong.html` **replaces** `index.html` (promote to the embed) or stays a parallel page while the AlphaTab one keeps serving.
 - Then generalize: tune picker / `?tune=<slug>` like the AlphaTab app, and confirm a no-chord tune (Orange Blossom) just plays melody+kick with a silent organ.
 - Want me to drive a live Chrome debug pass? Start the server and say so — I'll connect via Claude-in-Chrome, check the console, and confirm the three layers schedule (counts/state), the way the earlier live-debug sessions worked.
+
+---
+
+## 2026-07-01 — Ear-test feedback → two fixes (on disk, NOT yet pushed)
+
+Jason ear-tested the 3-layer prototype live for the first time. Verdict: **violin sound is better than the old sonivox** (less vibrato; fine for MVP, fine-tune later). Two bugs found, both fixed in `js/playalong.js`:
+
+1. **Kick inaudible even at max slider.** The MetroDrone MembraneSynth patch (50ms decay, C2) is fine solo but buried under violin samples + organ at unity gain. Fix: `engine.kick.volume.value = 10` (+10 dB on the synth itself, giving the slider real headroom). If still weak after ear-test: decay 0.1–0.2 adds body, C1 more sub, E2 more knock.
+2. **Extra dead beat at loop turnaround.** Root cause: Oh Susanna's XML writes the FINAL bar full-length (two half notes, 4 beats), so 1-beat pickup + full last bar = 65 beats; looping the full 65 inserts one silent beat before the pickup re-enters. Fix: parser now measures measure 1 (`firstMeasureTicks`), detects a pickup when it's shorter than a full bar, and emits `pickupBeats` + `loopBeats = totalBeats − pickupBeats`. `Transport.loopEnd = loopBeats` (64), so the pickup re-enters ON the final bar's beat 4 while the held final note rings over it (triggerAttackRelease durations are wall-clock — the tail isn't truncated by the wrap). Verified headless against the real XML: pickupBeats 1, loopBeats 64, notes 59 / chords 12 unchanged. No-pickup tunes: measure 1 = full bar → pickupBeats 0 → loop unchanged.
+
+**NOT ear-verified** (same as always — no audio here). **NOT pushed** — Jason to commit/push, hard-refresh `playalong.html`, and listen for: kick now present and mixable, and the loop wrapping pickup-into-bar-1 with no dead beat.
+
+**Sibelius-export track finding:** Bob Zawalich's Sibelius plugin **"Export Folder of Scores in Multiple Formats"** batch-exports a whole folder (subfolders preserved) to MusicXML, Sibelius 7.1–26.x, modern `.musicxml` extension. That likely makes Phase 1 of the Upwork job (mechanical export of all `.sib`) a DIY afternoon instead of a hire — the human is then only needed for Phase 2 (adding chord symbols to tunes that lack them). Decision pending Jason: DIY export vs post the job as drafted.

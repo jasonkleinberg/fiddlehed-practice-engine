@@ -68,11 +68,13 @@
     let divisions = null;       // ticks per quarter note (locked at first read)
     let beatsPerBar = 4, beatType = 4;
     let cursor = 0;             // global position in ticks
+    let firstMeasureTicks = null; // duration of measure 1 (pickup detection)
     let lastNoteOnset = 0;      // onset of the previous (non-chord) note
     const rawNotes = [];        // { tick, durTick, midi, tieStart, tieStop }
     const chords = [];          // { tick, rootStep, rootAlter, kind }
 
     for (const m of measures) {
+      const measureStart = cursor;
       for (const el of [...m.children]) {
         switch (el.tagName) {
           case "attributes": {
@@ -133,6 +135,7 @@
             break;
         }
       }
+      if (firstMeasureTicks === null) firstMeasureTicks = cursor - measureStart;
     }
 
     if (!divisions) divisions = 256;
@@ -154,11 +157,24 @@
     }
 
     const tpb = divisions;             // ticks per beat (quarter)
+
+    // Pickup (anacrusis): if measure 1 is shorter than a full bar, it's a
+    // pickup. Score convention here writes the FINAL bar full-length, so a
+    // naive loop of totalBeats adds pickupBeats of dead time at the wrap.
+    // The loop should end pickupBeats early: the pickup then re-enters on the
+    // final bar's last beat(s) while the held final note rings over it.
+    const barTicks = beatsPerBar * tpb * (4 / beatType);
+    const pickupBeats =
+      firstMeasureTicks && firstMeasureTicks < barTicks
+        ? firstMeasureTicks / tpb : 0;
+
     return {
       divisions,
       beatsPerBar,
       beatType,
+      pickupBeats,
       totalBeats: cursor / tpb,
+      loopBeats: cursor / tpb - pickupBeats,
       notes: notes.map((n) => ({
         beat: n.tick / tpb,
         durBeats: n.durTick / tpb,
@@ -256,6 +272,11 @@
       octaves: 2,
       envelope: { attack: 0.0006, decay: 0.05, sustain: 0 },
     }).connect(engine.kickGain);
+    // The MetroDrone patch is a short 50ms thud at C2 — fine solo, but buried
+    // under violin samples + organ at unity gain. Boost the synth itself so
+    // the slider has real headroom. (If still weak: decay 0.1–0.2 adds body,
+    // or trigger C1 for more sub / E2 for more knock.)
+    engine.kick.volume.value = 10;
 
     engine.built = true;
   }
@@ -289,10 +310,13 @@
       engine.kick.triggerAttackRelease("C2", "8n", time);
     }, "4n", "0:0:0");
 
-    // Loop the whole tune.
+    // Loop the tune. loopBeats = totalBeats minus the pickup, so the wrap
+    // lands the pickup on the final bar's last beat(s) — no dead beat. Notes
+    // already sounding (the held final note) keep ringing through the wrap
+    // because triggerAttackRelease durations are wall-clock, not truncated.
     Tone.Transport.loop = true;
     Tone.Transport.loopStart = 0;
-    Tone.Transport.loopEnd = beatToBBS(s.totalBeats);
+    Tone.Transport.loopEnd = beatToBBS(s.loopBeats);
   }
 
   // ---- Transport controls -------------------------------------------------
