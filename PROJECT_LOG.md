@@ -493,3 +493,11 @@ Jason confirmed: loop turnaround now correct, kick louder but STILL not loud eno
 - **Melody lag — root cause is the samples, not the clock.** Real violin samples have a soft bow-attack onset; the pitch speaks ~40ms after trigger. Against the instant-attack kick this reads as dragging, proportionally worse at fast tempos (40ms is a bigger slice of a shorter beat). Fix: **melody lead** — melody notes trigger `window.__melodyLead` seconds early (default **0.04**), clamped to now so the first note can't schedule in the past. Live-tunable from the console (`window.__melodyLead = 0.06`) so Jason can dial it by ear at a fast tempo before we hard-code the final value.
 
 Ear-test protocol for Jason: push, hard-refresh, crank tempo (140+), check (a) kick loud enough to lead the mix, (b) melody sits ON the kick, not behind it. If melody still drags, open DevTools console and try `window.__melodyLead = 0.06` (takes effect immediately, no reload); report the value that locks in.
+
+### 2026-07-01 (cont.) — round 2 ear-test: MVP ACCEPTED
+
+Jason's verdict: "good but not perfect — in other words, perfect for an MVP." Loop correct, melody lead works. Kick could still be stronger but is fine with violin/organ around 30%; **parked as a polish item** (options if revisited: +20 dB, kick-slider gain >1.0 mapping, or lowering melody/organ default sliders so the mix starts balanced). Prototype sound is signed off for MVP. Next front: Sibelius bulk export (DIY via Zawalich plugin), then library expansion.
+
+### 2026-07-01 (cont.) — pre-balanced default mix (on disk, NOT pushed)
+
+Per Jason's ear-test finding ("kick is fine if violin and organ are around 30%"), playalong.html slider defaults changed: melody 90→**30%**, organ 60→**30%**, kick 70→**100%**. The app now opens with the kick leading — students turn the melody UP as a reference when they need it, which matches the practice-tool use case (you play the melody; the app keeps the groove). No JS change needed — buildInstruments reads slider values at init.
