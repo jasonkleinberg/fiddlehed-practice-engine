@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.4";
+  const APP_VERSION = "1.6";
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -510,6 +510,7 @@
     Tone.Transport.position = beatToBBS(sec.start);
     for (const b of els.sections.querySelectorAll("button"))
       b.classList.toggle("active", b.textContent === sec.label);
+    updateSectionShade();   // mark the looping bars on the sheet music
   }
 
   function renderSections() {
@@ -573,9 +574,16 @@
     try {
       engine.scoreXml = xmlText;
       await engine.osmd.load(xmlText);
+      // 8 library files kept a second staff (duet/viola part) from the
+      // Sibelius export. The audio engine plays only the FIRST <part>, so
+      // showing the extra staff would be a silent, confusing twin. Hide all
+      // but part 1 before rendering (v1.6).
+      const instruments = engine.osmd.Sheet ? engine.osmd.Sheet.Instruments : [];
+      for (let i = 1; i < instruments.length; i++) instruments[i].Visible = false;
       engine.osmd.render();
       if (engine.osmd.cursor) engine.osmd.cursor.hide();  // we paint notes instead
       buildNoteMap();
+      updateSectionShade();   // re-apply after every render (fresh SVG)
     } catch (err) {
       // Score failure is non-fatal — audio keeps working.
       console.error("[sheet] render failed:", err);
@@ -621,6 +629,54 @@
     map.sort((a, b) => a.beat - b.beat);
     engine.noteMap = map;
     console.log(`[sheet] note map: ${map.length} notes`);
+  }
+
+  // SECTION SHADE (v1.5): a light gray band behind the bars of the active
+  // loop section (A, B1, …) so you can see at a glance what's looping.
+  // Notes stay full black — it's a region marker, not a dimmer. "Full" gets
+  // no shade (shading the whole tune is just noise).
+  // Geometry: OSMD graphical measures expose AbsolutePosition/Size in staff
+  // units; 1 unit = 10px × zoom (same convention OSMD's own cursor uses).
+  // Rects go in as the SVG's first children, so they paint UNDER the music.
+  function updateSectionShade() {
+    const osmd = engine.osmd;
+    const svg = document.querySelector("#score svg");
+    if (!osmd || !svg || !osmd.GraphicSheet || !osmd.Sheet) return;
+    for (const r of svg.querySelectorAll(".pe-section-shade")) r.remove();
+    const sec = engine.section;
+    if (!sec || sec.label === "Full" || !engine.score) return;
+    try {
+      const u = 10 * (osmd.zoom || 1);
+      const src = osmd.Sheet.SourceMeasures;
+      const gms = osmd.GraphicSheet.MeasureList;
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < src.length && i < gms.length; i++) {
+        const startBeat = src[i].AbsoluteTimestamp.RealValue * 4;
+        if (startBeat < sec.start - 1e-3 || startBeat >= sec.end - 1e-3)
+          continue;
+        for (const gm of gms[i] || []) {     // one entry per staff (we have 1)
+          if (!gm || !gm.PositionAndShape) continue;
+          // Hidden instruments (v1.6 duet-staff fix) still appear in the
+          // graphical measure list — don't draw bands for them.
+          const inst = gm.ParentStaff && gm.ParentStaff.ParentInstrument;
+          if (inst && inst.Visible === false) continue;
+          const bb = gm.PositionAndShape;
+          const rect = document.createElementNS(
+            "http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("class", "pe-section-shade");
+          rect.setAttribute("x", bb.AbsolutePosition.x * u);
+          // Staff = 4 units tall; extend 1.5 above / 1.5 below for a band
+          // that covers ledger lines without swallowing chord symbols.
+          rect.setAttribute("y", (bb.AbsolutePosition.y - 1.5) * u);
+          rect.setAttribute("width", bb.Size.width * u);
+          rect.setAttribute("height", 7 * u);
+          frag.appendChild(rect);
+        }
+      }
+      svg.insertBefore(frag, svg.firstChild);
+    } catch (err) {
+      console.error("[sheet] section shade failed:", err);
+    }
   }
 
   // Click-to-seek. If the target beat is outside the active loop section,
@@ -723,6 +779,7 @@
         try {
           engine.osmd.render();
           buildNoteMap();
+          updateSectionShade();
           updateHighlight(true);
         } catch (err) { console.error("[sheet] resize re-render failed:", err); }
       }, 300);

@@ -672,3 +672,21 @@ Fix: highlight position shifted back by a wall-clock offset converted to beats a
 Re-verified headless: 70/70 tunes, click-to-seek exact, no errors.
 
 Also from this check-in: v1.3 "Load failed" in Safari = opening playalong.html as a file:// (fetch blocked). Not a bug — use the live URL or `python3 -m http.server`.
+
+### 2026-07-07 (cont.) — v1.5: section shade on the sheet music (on disk, NOT pushed)
+
+Jason's request: when a loop section (A, B1, A3…) is selected, mark those bars on the score. Chosen treatment (his pick from three options): **light gray band BEHIND the selected bars** — a region marker, not a dimmer; notes stay full black. "Full" gets no shade.
+
+Implementation: `updateSectionShade()` — maps section beats → source measures via OSMD `SourceMeasures[i].AbsoluteTimestamp`, then draws one SVG rect per graphical measure (per staff) using `PositionAndShape.AbsolutePosition/Size` × 10 × zoom (OSMD's own cursor convention). Rects insert as the SVG's first children (paint under the music), `pointer-events: none` so click-to-seek passes through. Re-applied on section change, tune render, and resize.
+
+**Verified by screenshot** (headless Chromium, eyeballed the PNGs): oh-susanna A1/A bands exact; danny-boy A correctly skips the embedded pickup bar, spans systems, ends at the double barline; Full = no shade; no page errors.
+
+**DISCOVERY for the proofread pass: `danny-boy.musicxml` contains a SECOND staff (viola/duet part).** It renders in the score but never sounds (the audio parser reads only the first `<part>`), and the red highlight lights both staves. Scope said duets/viola were dropped — this one slipped through export. Options when proofreading: re-export melody-only from Sibelius, or have the app render/map only part 1. Worth a library-wide scan for other multi-part files.
+
+### 2026-07-07 (cont.) — v1.6: hide phantom duet staves (on disk, NOT pushed)
+
+Library scan triggered by the danny-boy discovery: **8 files kept a second staff from export** (arkansas-traveller, britches-full-of-stitches, cluck-old-hen, danny-boy, girl-i-left-behind-me, oh-susannah, swallowtail-jig, the-butterfly). The audio engine plays only the first `<part>`, so the extra staff rendered as a silent twin with its own red highlight.
+
+Fix in the app (no re-export needed): after `osmd.load()`, all instruments except the first get `Visible = false` before render; the section shade also skips hidden staves' measures. Verified: danny-boy renders single-staff, A-section shade = exactly 8 bands, 70/70 tune check still green, no errors.
+
+(If the second parts ever become wanted — duet mode? — they're still in the files, just hidden.)
