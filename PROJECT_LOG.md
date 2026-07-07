@@ -585,3 +585,16 @@ Jason's ear-test feedback on the 70-tune build: notes run together — "almost s
 ### 2026-07-06 (cont.) — articulation round 2: revert global changes, same-pitch-only (on disk, NOT pushed)
 
 Jason's ear-test of articulation round 1: "robotic," and tuning `__gapSame` (0.8 down to 0.009) didn't fix it. Diagnosis: `__gapSame` only affects repeated notes, but the roboticness was global → the culprits were the two GLOBAL changes: the "diff" gap (0.05s between every different-pitch pair) + sampler release cut 0.4→0.2 (abrupt note endings). Reverted both: **release back to 0.4, `__gapDiff` default 0**. Kept: slur handling and same-pitch separation, with `__gapSame` default softened to **0.08**. Net effect vs the version Jason liked: ONLY back-to-back repeated notes changed; everything else is bit-identical. Knobs still live for tuning. Note: with the 0.4 release tail restored, the same-pitch gap reads as a re-attack rather than silence — that's the "slight articulation" being asked for.
+
+### 2026-07-06 (cont.) — SECTION LOOPS: Full / A / B / A1 / A2 / B1 / B2 (on disk, NOT pushed)
+
+Jason's ask: loop the quarters/halves of a tune with one click (AABB practice). Built:
+
+- **Section buttons** under the transport: Full · A · B · A1 · A2 · B1 · B2. A/B = halves of the body bars, A1–B2 = quarters, all snapped to bar boundaries. Buttons render only when the bar count divides (65/70 tunes qualify; wildwood-flower 9 bars, foggy-dew + both kesh-jigs 17, wagon-wheel 13 get Full only — those odd counts may be extra ending bars in the source, worth eyeballing someday). Clicking a section sets Transport loopStart/loopEnd and jumps there (keeps playing if playing); Stop returns to the section start; tune switch resets to Full. Buttons blur after click so spacebar stays play/pause. Active button highlighted FiddleHed red (#990034).
+- **Parser: second pickup convention discovered + handled.** The 7/3 exports engraved some pickups as full first bars padded with leading rests (oh-susannah, harvest-home, danny-boy, southwind, ashokan-farewell, wagon-wheel) — old code saw "no pickup," which meant up to 3 beats of dead silence at every loop wrap. Parser now emits `loopStartBeats` (first note — skips the silent lead-in), `bodyStartBeats` (bar-1 downbeat of the body), and `pickupBeats` for BOTH conventions (explicit short measure + embedded). Full loop = [first note, total − pickup): the pickup overlaps the final bar's tail exactly as before. Handles fractional pickups (danny-boy 1.5 beats → loopStart 0:2:2).
+
+**Verified headless:** 70/70 parse with valid loop windows; 13-assert app-level test passes (bile quarters, susannah embedded pickup + sections, danny-boy fractional, 6/8 jig bar math, wagon-wheel graceful fallback, switch-resets-to-Full).
+
+**Jason ear-test:** Oh Susannah Full loop (should skip the opening silence AND wrap clean now); B1 on any 32-bar tune; a jig section; switch sections mid-play.
+
+**Roadmap note (Jason):** section loops = last planned feature for the prototype; next phase = DESIGN, then presumably promote to replace the AlphaTab embed.

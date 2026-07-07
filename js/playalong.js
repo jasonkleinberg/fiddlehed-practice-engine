@@ -33,6 +33,7 @@
   const els = {
     title: $("tune-title"),
     lessonLink: $("lesson-link"),
+    sections: $("sections"),
     tuneSearch: $("tune-search"),
     tuneSelect: $("tune-select"),
     status: $("status"),
@@ -178,23 +179,39 @@
 
     const tpb = divisions;             // ticks per beat (quarter)
 
-    // Pickup (anacrusis): if measure 1 is shorter than a full bar, it's a
-    // pickup. Score convention here writes the FINAL bar full-length, so a
-    // naive loop of totalBeats adds pickupBeats of dead time at the wrap.
-    // The loop should end pickupBeats early: the pickup then re-enters on the
-    // final bar's last beat(s) while the held final note rings over it.
+    // Pickup (anacrusis) — two engraving conventions in this library:
+    //   1. EXPLICIT: measure 1 is shorter than a full bar (a real pickup
+    //      measure). Body bars start at pickupBeats.
+    //   2. EMBEDDED: measure 1 is full-length but padded with leading rests,
+    //      the pickup notes at its end (how some Sibelius exports came out).
+    //      Body bars start at the bar-2 downbeat.
+    // In both, the final bar is written full-length, so a naive full loop
+    // adds pickup-length dead time at the wrap. Fix: loop from the first
+    // NOTE to (end − pickup) — the pickup re-enters on the final bar's last
+    // beat(s) while the held final note rings over the wrap.
+    const totalBeats = cursor / tpb;
     const barTicks = beatsPerBar * tpb * (4 / beatType);
-    const pickupBeats =
-      firstMeasureTicks && firstMeasureTicks < barTicks
-        ? firstMeasureTicks / tpb : 0;
+    const barBeats = barTicks / tpb;
+    const firstNoteBeat = notes.length ? notes[0].tick / tpb : 0;
+    let pickupBeats = 0, loopStartBeats = 0, bodyStartBeats = 0;
+    if (firstMeasureTicks && firstMeasureTicks < barTicks) {
+      pickupBeats = firstMeasureTicks / tpb;            // explicit
+      bodyStartBeats = pickupBeats;
+    } else if (firstNoteBeat > 0 && firstNoteBeat < barBeats) {
+      pickupBeats = barBeats - firstNoteBeat;           // embedded
+      loopStartBeats = firstNoteBeat;                   // skip the silent rests
+      bodyStartBeats = barBeats;
+    }
 
     return {
       divisions,
       beatsPerBar,
       beatType,
       pickupBeats,
-      totalBeats: cursor / tpb,
-      loopBeats: cursor / tpb - pickupBeats,
+      loopStartBeats,
+      bodyStartBeats,
+      totalBeats,
+      loopBeats: totalBeats - pickupBeats,   // loop END (start = loopStartBeats)
       notes: notes.map((n) => ({
         beat: n.tick / tpb,
         durBeats: n.durTick / tpb,
@@ -252,6 +269,7 @@
     built: false,
     tunes: [],        // index.json records, sorted in course order
     current: null,    // the loaded tune's index.json record
+    section: null,    // active loop section { label, start, end } in beats
     score: null,
     sampler: null,
     organ: null,
@@ -369,12 +387,13 @@
       engine.kick.triggerAttackRelease("C2", "8n", time);
     }, compound ? "4n." : "4n", "0:0:0");
 
-    // Loop the tune. loopBeats = totalBeats minus the pickup, so the wrap
-    // lands the pickup on the final bar's last beat(s) — no dead beat. Notes
-    // already sounding (the held final note) keep ringing through the wrap
-    // because triggerAttackRelease durations are wall-clock, not truncated.
+    // Loop the tune (Full defaults; setSection overrides for A/B parts).
+    // Start = first note (skips rest-padded lead-ins); end = total − pickup,
+    // so the wrap lands the pickup on the final bar's last beat(s) — no dead
+    // time. Notes already sounding keep ringing through the wrap because
+    // triggerAttackRelease durations are wall-clock, not truncated.
     Tone.Transport.loop = true;
-    Tone.Transport.loopStart = 0;
+    Tone.Transport.loopStart = beatToBBS(s.loopStartBeats);
     Tone.Transport.loopEnd = beatToBBS(s.loopBeats);
   }
 
@@ -389,6 +408,67 @@
     // Kill anything still sounding (held organ chord, ringing melody note).
     if (engine.sampler && engine.sampler.releaseAll) engine.sampler.releaseAll();
     if (engine.organ && engine.organ.releaseAll) engine.organ.releaseAll();
+  }
+
+  // =========================================================================
+  // 2a. SECTION LOOPS — Full / A / B / A1 / A2 / B1 / B2
+  //     Fiddle tunes are mostly AABB. A = first half of the body bars,
+  //     B = second half; A1/A2/B1/B2 quarter it. Buttons only appear when
+  //     the bar count divides evenly. Sections exclude the pickup (the
+  //     pickup plays only in Full, via the loop-overlap trick).
+  // =========================================================================
+  function buildSections() {
+    const s = engine.score;
+    const barBeats = s.beatsPerBar * (4 / s.beatType);
+    const bodyStart = s.bodyStartBeats;
+    const nBars = Math.round((s.totalBeats - bodyStart) / barBeats);
+    const secs = [{ label: "Full", start: s.loopStartBeats, end: s.loopBeats }];
+    const add = (label, fromBar, barCount) => secs.push({
+      label,
+      start: bodyStart + fromBar * barBeats,
+      end: bodyStart + (fromBar + barCount) * barBeats,
+    });
+    if (nBars >= 4 && nBars % 2 === 0) {
+      const h = nBars / 2;
+      add("A", 0, h);
+      add("B", h, h);
+      if (h % 2 === 0) {
+        const q = h / 2;
+        add("A1", 0, q); add("A2", q, q);
+        add("B1", h, q); add("B2", h + q, q);
+      }
+    }
+    return secs;
+  }
+
+  function setSection(sec) {
+    engine.section = sec;
+    Tone.Transport.loopStart = beatToBBS(sec.start);
+    Tone.Transport.loopEnd = beatToBBS(sec.end);
+    Tone.Transport.position = beatToBBS(sec.start);
+    for (const b of els.sections.querySelectorAll("button"))
+      b.classList.toggle("active", b.textContent === sec.label);
+  }
+
+  function renderSections() {
+    const secs = buildSections();
+    els.sections.innerHTML = "";
+    if (secs.length > 1) {
+      const lab = document.createElement("span");
+      lab.className = "sections-label";
+      lab.textContent = "Loop:";
+      els.sections.appendChild(lab);
+      for (const sec of secs) {
+        const btn = document.createElement("button");
+        btn.textContent = sec.label;
+        btn.addEventListener("click", () => {
+          setSection(sec);
+          btn.blur();   // keep spacebar on play/pause, not this button
+        });
+        els.sections.appendChild(btn);
+      }
+    }
+    setSection(secs[0]);   // default = Full (also sets Transport loop points)
   }
 
   // =========================================================================
@@ -469,6 +549,7 @@
       Tone.Transport.bpm.value = bpm;
 
       scheduleScore();
+      renderSections();   // rebuild loop buttons for this tune; resets to Full
 
       if (els.tuneSelect.value !== rec.slug) els.tuneSelect.value = rec.slug;
       try {
@@ -511,7 +592,8 @@
 
   function onStop() {
     Tone.Transport.stop();
-    Tone.Transport.position = 0;
+    Tone.Transport.position =
+      engine.section ? beatToBBS(engine.section.start) : 0;
     setStatus("Stopped.");
     els.play.disabled = false;
     els.pause.disabled = true;

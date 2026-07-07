@@ -26,6 +26,10 @@
     .picker input[type="text"] { flex: 1 1 12rem; padding: 0.4rem 0.6rem; font-size: 0.95rem; }
     .picker select { flex: 2 1 16rem; padding: 0.4rem; font-size: 0.95rem; max-width: 100%; }
     .lesson-link { font-size: 0.9rem; }
+    .sections { margin: 0.75rem 0; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+    .sections .sections-label { font-size: 0.9rem; color: #666; margin-right: 0.25rem; }
+    .sections button { padding: 0.3rem 0.7rem; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+    .sections button.active { background: #990034; border-color: #990034; color: #fff; }
     .slider { margin: 1rem 0; }
     .slider label { display: block; margin-bottom: 0.25rem; }
     .slider input[type="range"] { width: 100%; }
@@ -55,6 +59,8 @@
     <button id="pause" disabled>Pause</button>
     <button id="stop" disabled>Stop</button>
   </div>
+
+  <div class="sections" id="sections"></div>
 
   <div class="slider tempo">
     <label for="tempo">Tempo: <span id="tempo-readout">80 BPM</span></label>
