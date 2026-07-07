@@ -615,3 +615,17 @@ Jason (after section loops + articulation): melody still lags, more audible now 
 ### 2026-07-07 (cont.) — lead/gap dial turns (on disk, NOT pushed)
 
 Jason's ear after the measured-onset build: still lagging, and 0.08 same-pitch gap "robotic." Defaults adjusted: `__leadBias` 0.02 → **0.05** (perceived bow attack sits nearer 50%-of-peak than the measured 30% threshold — total leads now ~80–160ms per note), `__gapSame` 0.08 → **0.05**. Note the interplay: the lead pulls the NEXT note earlier, which also eats into the audible gap — so these two moves compound in the direction Jason wants. Both remain live-tunable in console. If lag persists after this, next suspects: (a) verify he's on the new build (stale cache has bitten before), (b) different sample set with faster attacks (the real fix if the nbrosowsky samples are just too soft-edged for practice use).
+
+### 2026-07-07 (cont.) — v1.0: part-quarters, version badge, AlphaTab retired as target (on disk, NOT pushed)
+
+Three closing changes from Jason:
+
+1. **Section scheme restructured to part-quarters.** A/B = the tune's two parts (halves of the body). Each part now splits into QUARTERS: A1–A4 / B1–B4 (2 bars each on the typical 8-bar part). Parts whose bar count divides by 4 → quarters; by 2 only → halves (A1/A2); odd → part buttons only. Bile (2-bar parts) → Full,A,B,A1,A2,B1,B2; Oh Susannah + jigs (8-bar parts) → the full 11 buttons. C parts NOT auto-detectable (MusicXML has no part markers) — if a 3-part tune ever matters, add a `parts` field to index.json and extend buildSections.
+2. **Version badge**: `APP_VERSION` const, rendered in the footer hint + console. **Now at v1.0.** Convention: bump on every user-visible change and tell Jason the number in chat — his hard-refresh verification.
+3. **DECISION (Jason): the Tone.js player beats AlphaTab — playalong.html is the target for the eventual WordPress embed.** index.html/player.js stay live (WP shortcode still points there) but get no further work. Swap happens after the design phase.
+
+**Timing note:** melody lead at bias 0.05 is "better, not 100%" — parked for today, still fine-tunable (`__leadBias`). If it never fully lands, next step is a faster-attack violin sample set.
+
+**Verified headless:** version renders; bile/susannah/jig button sets and A3/B4/B2 loop windows all correct.
+
+**Next (design phase):** mobile-first design pass on playalong.html; then swap the WP shortcode target; parked: timing fine-tune, count-in, kick sound, 5 odd-bar tunes, C-part metadata.

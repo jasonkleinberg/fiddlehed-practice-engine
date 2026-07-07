@@ -16,6 +16,9 @@
   "use strict";
 
   // ---- Config -------------------------------------------------------------
+  // Version: bump on EVERY user-visible change and tell Jason the number in
+  // chat — it's how he verifies a hard-refresh actually took.
+  const APP_VERSION = "1.0";
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -463,14 +466,19 @@
       start: bodyStart + fromBar * barBeats,
       end: bodyStart + (fromBar + barCount) * barBeats,
     });
+    // A/B = the tune's two parts (halves of the body). Each part then splits
+    // into QUARTERS (A1–A4, usually 2 bars each on an 8-bar part) when its
+    // bar count divides by 4, else halves (A1–A2), else no subdivisions.
+    // (C parts would need per-tune metadata — MusicXML has no part markers.)
     if (nBars >= 4 && nBars % 2 === 0) {
-      const h = nBars / 2;
-      add("A", 0, h);
-      add("B", h, h);
-      if (h % 2 === 0) {
-        const q = h / 2;
-        add("A1", 0, q); add("A2", q, q);
-        add("B1", h, q); add("B2", h + q, q);
+      const partBars = nBars / 2;
+      const parts = [["A", 0], ["B", partBars]];
+      for (const [p, off] of parts) add(p, off, partBars);
+      const div = partBars % 4 === 0 ? 4 : partBars % 2 === 0 ? 2 : 0;
+      if (div) {
+        const q = partBars / div;
+        for (const [p, off] of parts)
+          for (let i = 0; i < div; i++) add(p + (i + 1), off + i * q, q);
       }
     }
     return secs;
@@ -664,6 +672,8 @@
   // 3. INIT
   // =========================================================================
   async function init() {
+    $("version").textContent = "v" + APP_VERSION;
+    console.log("[playalong] version", APP_VERSION);
     wireSliders();
     els.play.addEventListener("click", onPlay);
     els.pause.addEventListener("click", onPause);
