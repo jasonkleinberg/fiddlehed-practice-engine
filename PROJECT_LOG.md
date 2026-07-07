@@ -629,3 +629,13 @@ Three closing changes from Jason:
 **Verified headless:** version renders; bile/susannah/jig button sets and A3/B4/B2 loop windows all correct.
 
 **Next (design phase):** mobile-first design pass on playalong.html; then swap the WP shortcode target; parked: timing fine-tune, count-in, kick sound, 5 odd-bar tunes, C-part metadata.
+
+### 2026-07-07 (cont.) — v1.1: TEMPO-AWARE melody lead (on disk, NOT pushed)
+
+Jason's closing observation (Shooting Creek, A1 loop): timing perfect at 60 BPM, lags progressively as tempo rises, NO cumulative drift. Diagnosis: the lead is a fixed wall-clock head start and it's right at 60 — but the bow attack occupies a growing fraction of each shorter note, so the perceived landing point slides later relative to the kick as tempo climbs (constant error ÷ shrinking beat = growing perceived lag).
+
+Fix: `melodyLeadFor` now adds a tempo term — `__leadTempo * (bpm/60 − 1)`, zero at 60 BPM (where Jason's ear says it's already right), +50ms at 120, +100ms at 180 (`__leadTempo` default 0.05, live-tunable). Lead cap 0.18 → 0.25; lookAhead 0.25 → 0.35 for headroom. Reads live BPM in the callback, so slider changes apply immediately.
+
+**Ear-test (next session):** Shooting Creek A1 at 60 → 90 → 120 → 150, checking the violin stays ON the kick at each step. Knobs: `__leadTempo` (tempo slope) and `__leadBias` (flat offset).
+
+**v1.1.** (Versioning convention now in effect: bump + announce every visible change.)

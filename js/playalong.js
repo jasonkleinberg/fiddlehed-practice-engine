@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.0";
+  const APP_VERSION = "1.1";
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -289,7 +289,7 @@
     // Extra scheduling headroom: melody notes trigger up to ~180ms EARLY to
     // compensate sample onsets; the default 100ms lookahead would clamp the
     // bigger leads (G4, E6). 250ms of UI latency is fine for a practice tool.
-    if (Tone.context && "lookAhead" in Tone.context) Tone.context.lookAhead = 0.25;
+    if (Tone.context && "lookAhead" in Tone.context) Tone.context.lookAhead = 0.35;
     // Per-layer gain → independent volume sliders (MetroDrone Tone.Gain pattern).
     engine.melodyGain = new Tone.Gain(els.melVol.value / 100).toDestination();
     engine.organGain = new Tone.Gain(els.orgVol.value / 100).toDestination();
@@ -363,6 +363,14 @@
     // (The 30%-of-peak onset measure likely underestimates PERCEIVED attack
     // on bowed samples; perceived onset sits nearer 50% of peak.)
     window.__leadBias = window.__leadBias ?? 0.05;
+    // TEMPO-AWARE LEAD (7/7, Jason's key observation): timing sounds perfect
+    // at 60 BPM but lags as tempo rises, with NO drift. Constant residual
+    // error + shrinking beat = the slow bow attack occupies a growing
+    // fraction of each (shorter) note, so its perceived landing point slides
+    // later relative to the kick. Fix: an extra lead that is 0 at 60 BPM
+    // (already right there) and grows with tempo. __leadTempo = seconds of
+    // extra lead per doubling-ish of tempo (default 0.05 → +50ms at 120 BPM).
+    window.__leadTempo = window.__leadTempo ?? 0.05;
     function melodyLeadFor(midi) {
       let bestName = "A4", bestD = Infinity;
       for (const name in NAME_MIDI) {
@@ -370,7 +378,10 @@
         if (d < bestD) { bestD = d; bestName = name; }
       }
       const rate = Math.pow(2, (midi - NAME_MIDI[bestName]) / 12);
-      return Math.min(0.18, VIOLIN_ONSET[bestName] / rate + window.__leadBias);
+      const tempoTerm =
+        window.__leadTempo * Math.max(0, Tone.Transport.bpm.value / 60 - 1);
+      return Math.min(0.25,
+        VIOLIN_ONSET[bestName] / rate + window.__leadBias + tempoTerm);
     }
 
     // ARTICULATION: how each note ends depends on what follows it.
