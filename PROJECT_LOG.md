@@ -662,3 +662,13 @@ The Soundslice-style feature: the score renders on screen and the sounding note 
 **Notes for Jason's browser check:** OSMD won't look identical to Sibelius engraving (same notes, web spacing/fonts). Chord symbols from `<harmony>` render above the staff. The score should make the July proofread pass easier — score + audio in one tab.
 
 **Next:** Jason push + browser check (hard-refresh, confirm v1.3 badge). Then the pending v1.2 spacing A/B and the tempo-lead ear-test.
+
+### 2026-07-07 (cont.) — v1.4: highlight visual delay (on disk, NOT pushed)
+
+Jason's browser verdict on v1.3: works, but the highlight runs "a little ahead of the music — slightly unnerving." Cause: the highlight tracked the SCHEDULED beat while the heard note lands later (audio output latency + the violin samples' soft bow attack) — the eye beat the ear.
+
+Fix: highlight position shifted back by a wall-clock offset converted to beats at live tempo, applied ONLY while playing (seek clicks stay instant). **Live-tunable: `window.__hlDelay`** (seconds, default **0.12**). If it still leads → raise (Bluetooth headphones ≈ 0.25–0.35); if it trails → lower toward 0. Once Jason lands on a number, bake it in as the default.
+
+Re-verified headless: 70/70 tunes, click-to-seek exact, no errors.
+
+Also from this check-in: v1.3 "Load failed" in Safari = opening playalong.html as a file:// (fetch blocked). Not a bug — use the live URL or `python3 -m http.server`.

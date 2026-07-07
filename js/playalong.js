@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.3";
+  const APP_VERSION = "1.4";
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -652,7 +652,20 @@
     const ticks = Tone.Transport.ticks;
     if (!force && ticks === lastPaintedTicks) return;   // nothing moved
     lastPaintedTicks = ticks;
-    const pos = ticks / Tone.Transport.PPQ;             // quarter-note beats
+    let pos = ticks / Tone.Transport.PPQ;               // quarter-note beats
+
+    // VISUAL DELAY (v1.4, Jason's 7/7 feedback): the highlight tracked the
+    // SCHEDULED beat, but the heard note lands later — audio output latency
+    // (tens of ms; much more on Bluetooth) plus the violin samples' soft bow
+    // attack. Eye beat ear → felt "ahead." Shift the highlight back by a
+    // wall-clock offset, converted to beats at the live tempo. Only while
+    // playing — seeks and stopped-state clicks stay instant.
+    // Live-tunable: window.__hlDelay (seconds). Raise if the highlight still
+    // leads the sound (Bluetooth ≈ 0.25–0.35), lower toward 0 if it trails.
+    window.__hlDelay = window.__hlDelay ?? 0.12;
+    if (Tone.Transport.state === "started") {
+      pos -= window.__hlDelay * (Tone.Transport.bpm.value / 60);
+    }
 
     const active = [];
     for (const e of engine.noteMap) {
