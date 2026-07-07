@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.1";
+  const APP_VERSION = "1.2";
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -393,7 +393,9 @@
     //            different-pitch transitions were fine as they were.
     // Gaps are wall-clock, capped as a fraction of the note so fast passages
     // never choke. Live-tunable: window.__gapSame / window.__gapDiff (secs).
-    window.__gapSame = window.__gapSame ?? 0.05;   // 0.08 read as robotic (7/7)
+    // 7/7 A/B experiment (Jason): spacing zeroed to test timing feel without
+    // any articulation gaps. Restore live: window.__gapSame = 0.05
+    window.__gapSame = window.__gapSame ?? 0;
     window.__gapDiff = window.__gapDiff ?? 0;
     const melodyEvents = s.notes.map((n, i) => {
       const next = s.notes[i + 1];

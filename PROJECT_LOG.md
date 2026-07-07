@@ -639,3 +639,7 @@ Fix: `melodyLeadFor` now adds a tempo term — `__leadTempo * (bpm/60 − 1)`, z
 **Ear-test (next session):** Shooting Creek A1 at 60 → 90 → 120 → 150, checking the violin stays ON the kick at each step. Knobs: `__leadTempo` (tempo slope) and `__leadBias` (flat offset).
 
 **v1.1.** (Versioning convention now in effect: bump + announce every visible change.)
+
+### 2026-07-07 (cont.) — v1.2: spacing zeroed for an A/B timing experiment (on disk, NOT pushed)
+
+Jason wants to hear timing feel WITHOUT the articulation spacing (the pre-spacing sound), suspecting the gaps interact with perceived lag. Rather than a git rollback (which would also revert the measured/tempo-aware leads and muddy the experiment), only the spacing default changed: `__gapSame` 0.05 → **0**. Everything else current (per-note onset table, tempo-aware lead, slur parsing — now a no-op at gap 0). Live A/B in console: `__gapSame = 0.05` restores spacing mid-playback, `= 0` removes it. Depending on verdict, either bake in 0 (drop spacing) or restore 0.05.
