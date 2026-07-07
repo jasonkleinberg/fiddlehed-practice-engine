@@ -567,3 +567,17 @@ Per Jason's ear-test finding ("kick is fine if violin and organ are around 30%")
 **NOT ear/browser-verified** — Jason's checklist after push: dropdown lists all 70; pick Shady Grove + a jig (e.g. Kerfunken) + Danny Boy; switch mid-playback (no overlap/stuck notes); jig kick feels right on the dotted-quarter pulse; search box; `?tune=shady-grove` URL; spacebar still works after switching.
 
 **Next:** promote-vs-parallel decision (replace index.html/the WP shortcode target with playalong.html?); genre/difficulty backfill; AB loop / section practice; AI-tutor integration.
+
+### 2026-07-06 (cont.) — NOTE ARTICULATION: slur-aware separation (on disk, NOT pushed)
+
+Jason's ear-test feedback on the 70-tune build: notes run together — "almost sounds like the notes are slurred… like pulses" — worst when the same note repeats. Ask: real separation between repeated same-pitch notes; different pitches can stay close; honor notated slurs.
+
+**Implementation (js/playalong.js):**
+- Parser now reads `<notations><slur type="start|stop">` per note (folded through tie-merges), tracks a running slur depth, and emits `legatoAfter` per note = "the transition to the NEXT note is under a slur." 10 of 70 files carry real slurs (93 slurred transitions corpus-wide); depth guard against stray stops; verified no slur runs past a final note.
+- `scheduleScore` classifies every transition: **slur** (full legato, no gap) / **same** (next note same pitch, back-to-back → gap `min(0.15s, 35% of note)`) / **diff** (subtle detaché → gap `min(0.05s, 20%)`). Gap subtracted from sounding duration, 50ms floor so fast passages never choke.
+- **Sampler release 0.4 → 0.2** — the long fade was half the "everything is slurred" problem; 0.4s of tail filled any gap we made.
+- Live knobs for Jason's ear: `window.__gapSame` (default 0.15) and `window.__gapDiff` (0.05) in the console, effective immediately mid-playback.
+
+**Verified headless:** 70/70 parse; slur classification spot-checked (Angeline the Baker legato map matches its slur clusters; Bile = 15/24 "same" transitions); full-app integration test passes — slurred notes play full duration, others shortened with the floor respected, `?tune=` still honored.
+
+**Jason's ear-test:** Bile 'em Cabbage Down (repeated-note city) for the "same" gap; Angeline the Baker for slurs still legato; a jig at speed for the fast-passage floor. Tune with `__gapSame`/`__gapDiff` if needed and report keepers.

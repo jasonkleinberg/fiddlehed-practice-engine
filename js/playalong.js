@@ -119,12 +119,16 @@
                 el.querySelector("pitch > octave")?.textContent || "4", 10);
               const ties = [...el.querySelectorAll("tie")].map(
                 (t) => t.getAttribute("type"));
+              const slurs = [...el.querySelectorAll("notations > slur")].map(
+                (sl) => sl.getAttribute("type"));
               rawNotes.push({
                 tick: onset,
                 durTick,
                 midi: pitchToMidi(step, alter, octave),
                 tieStart: ties.includes("start"),
                 tieStop: ties.includes("stop"),
+                slurStarts: slurs.filter((t) => t === "start").length,
+                slurStops: slurs.filter((t) => t === "stop").length,
               });
             }
             break;
@@ -154,10 +158,22 @@
         if (prev) {
           prev.durTick += n.durTick;
           prev.tieOpen = n.tieStart;   // stays open if this segment also starts a tie
+          prev.slurStarts += n.slurStarts;   // fold slur marks into the merged note
+          prev.slurStops += n.slurStops;
           continue;
         }
       }
       notes.push({ ...n, tieOpen: n.tieStart });
+    }
+
+    // Slur tracking: a running depth over the merged notes. If depth > 0
+    // AFTER a note's own starts/stops are applied, the transition from that
+    // note to the next is under a slur → play it legato (no separation).
+    let slurDepth = 0;
+    for (const n of notes) {
+      slurDepth += (n.slurStarts || 0) - (n.slurStops || 0);
+      if (slurDepth < 0) slurDepth = 0;   // guard against stray stops
+      n.legatoAfter = slurDepth > 0;
     }
 
     const tpb = divisions;             // ticks per beat (quarter)
@@ -183,6 +199,7 @@
         beat: n.tick / tpb,
         durBeats: n.durTick / tpb,
         midi: n.midi,
+        legatoAfter: n.legatoAfter,
       })),
       chords: chords.map((c) => ({
         beat: c.tick / tpb,
@@ -257,7 +274,7 @@
     engine.sampler = new Tone.Sampler({
       urls: VIOLIN_URLS,
       baseUrl: VIOLIN_BASE,
-      release: 0.4,
+      release: 0.2,   // was 0.4 — the long fade-out smeared note separation
       onload: () => {
         engine.ready = true;
         enableTransport();
@@ -299,12 +316,34 @@
     // first note can't be scheduled in the past. Live-tunable in the console:
     // window.__melodyLead = 0.06 (seconds).
     window.__melodyLead = window.__melodyLead ?? 0.04;
+
+    // ARTICULATION: how each note ends depends on what follows it.
+    //   "slur" — next transition is under a notated slur → full legato, no gap.
+    //   "same" — next note is the SAME pitch, back-to-back → clear separation
+    //            (otherwise repeated notes blur into one pulse).
+    //   "diff" — different pitch → subtle separation (light detaché).
+    // Gaps are wall-clock, capped as a fraction of the note so fast passages
+    // never choke. Live-tunable: window.__gapSame / window.__gapDiff (secs).
+    window.__gapSame = window.__gapSame ?? 0.15;
+    window.__gapDiff = window.__gapDiff ?? 0.05;
+    const melodyEvents = s.notes.map((n, i) => {
+      const next = s.notes[i + 1];
+      let artic = "diff";
+      if (n.legatoAfter) artic = "slur";
+      else if (next && next.midi === n.midi
+               && next.beat - (n.beat + n.durBeats) < 0.05) artic = "same";
+      return [beatToBBS(n.beat), { ...n, artic }];
+    });
     engine.melodyPart = new Tone.Part((time, ev) => {
-      const dur = ev.durBeats * (60 / Tone.Transport.bpm.value);
+      const full = ev.durBeats * (60 / Tone.Transport.bpm.value);
+      let gap = 0;
+      if (ev.artic === "same") gap = Math.min(window.__gapSame, full * 0.35);
+      else if (ev.artic === "diff") gap = Math.min(window.__gapDiff, full * 0.2);
+      const dur = Math.max(0.05, full - gap);
       const when = Math.max(time - window.__melodyLead, Tone.now());
       engine.sampler.triggerAttackRelease(
         Tone.Frequency(ev.midi, "midi").toNote(), dur, when);
-    }, s.notes.map((n) => [beatToBBS(n.beat), n]));
+    }, melodyEvents);
     engine.melodyPart.start(0);
 
     // Organ — each chord sustains until the next chord change (or tune end).
