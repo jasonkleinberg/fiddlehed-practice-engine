@@ -22,6 +22,10 @@
     }
     button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
     button:disabled { cursor: not-allowed; opacity: 0.5; }
+    .picker { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; }
+    .picker input[type="text"] { flex: 1 1 12rem; padding: 0.4rem 0.6rem; font-size: 0.95rem; }
+    .picker select { flex: 2 1 16rem; padding: 0.4rem; font-size: 0.95rem; max-width: 100%; }
+    .lesson-link { font-size: 0.9rem; }
     .slider { margin: 1rem 0; }
     .slider label { display: block; margin-bottom: 0.25rem; }
     .slider input[type="range"] { width: 100%; }
@@ -39,6 +43,12 @@
 <body>
   <h1>FiddleHed Practice Engine</h1>
   <p class="tune-title" id="tune-title">Loading tune…</p>
+  <p><a class="lesson-link" id="lesson-link" href="#" target="_blank" rel="noopener" style="display:none">Watch the lesson →</a></p>
+
+  <div class="picker">
+    <input type="text" id="tune-search" placeholder="Search tunes…" aria-label="Search tunes" />
+    <select id="tune-select" aria-label="Choose a tune"></select>
+  </div>
 
   <div class="controls">
     <button id="play" disabled>Play</button>

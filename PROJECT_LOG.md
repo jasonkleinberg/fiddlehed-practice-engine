@@ -501,3 +501,69 @@ Jason's verdict: "good but not perfect — in other words, perfect for an MVP." 
 ### 2026-07-01 (cont.) — pre-balanced default mix (on disk, NOT pushed)
 
 Per Jason's ear-test finding ("kick is fine if violin and organ are around 30%"), playalong.html slider defaults changed: melody 90→**30%**, organ 60→**30%**, kick 70→**100%**. The app now opens with the kick leading — students turn the melody UP as a reference when they need it, which matches the practice-tool use case (you play the melody; the app keeps the groove). No JS change needed — buildInstruments reads slider values at init.
+
+---
+
+## 2026-07-03 — Core-tune XML library assembled end-to-end (Cowork session with Jason)
+
+**What happened:**
+- Classified all 216 core lessons (from `fiddlehed-content/Knowledge/course_structure.json`) into tunes vs non-tunes. Result: **70 tunes** need melody+chords XML; the other 146 are technique/scale/exercise/review/info lessons.
+- Scope decisions (Jason): transposed-tune collections SKIP; chord-backup lessons include tune-based only (Bile, Kerry Polka); double-stop variations get their own files; duets skipped for now; Bile & Kerry Polka keep multiple versions (basic / chord-backup / double-stops).
+- Dropbox archaeology: the `_FiddleHed Archives` files were 0-byte online-only placeholders and scattered across sibling folders; mounting `_Main course sheet music` + `Content Projects` and offline-syncing stragglers surfaced a source for **all 70** — 48 Sibelius `.sib` + 22 ready MusicXML. "Lost" fear was mostly scattered folders + spelling (Hava **Nagilah** vs Negilah).
+- Staged the 48 `.sib` (slug-named) into `Practice Engine - Sibelius for Export/` and the ready XML into `Practice Engine - Already XML/`. Resolved 6 base/variation conflations (Mary Had, Twinkle/Fiddle-Fiddle, Oh Susannah, Ballydesmond L/U octave, Old Joe Clark, Soldier's Joy) into distinct files.
+- Jason batch-exported the `.sib` via the "Export Folder of Scores in Multiple Formats" Sibelius plugin. First run was messy (pointed at whole library → bonus tunes + output dumped on inputs); cleaned up, re-ran on just the staging folder → 44 clean slug-named `.musicxml`.
+- Consolidated all **70 MusicXML into `Practice Engine - XML output/`** and generated **`index.json`** (title, lesson_id, module, key, timeSignature, tempo, chords, videoLessonUrl — 100% mapped to lessons).
+- Chord audit across all 70: **53 have chord symbols, 3 have chords as text-only (Cripple Creek, Lucy Farr's, Peacock Rag), 14 are chordless.**
+- Produced `Practice Engine - Chords TODO.md` — worker brief (17-tune table + instructions) and an Upwork job post — to outsource the chord work.
+
+**Decisions made:**
+- Engine reads chords from MusicXML `<harmony>`; text chord labels don't count → the 3 text-only tunes must be converted to real chord symbols.
+- `index.json` schema aligned with NEW_SONG_WORKFLOW (blanks allowed for genre/difficulty/tabs).
+- Chord work (17 tunes) to be outsourced via Upwork.
+
+**Next session should:**
+- Once the 17 chorded files come back, re-merge and re-run the chord validation.
+- Wire the 70 files + `index.json` into the engine's `music/` folder and adapt to what `playalong.html` expects; the 53 ready tunes are playable now.
+- Optional: sanity-check auto-detected keys (e.g., Lucy Farr's read as Bb); backfill genre/difficulty from course tags.
+
+---
+
+## 2026-07-06 — Chorded, corrected, and staged into the app (Cowork session with Jason)
+
+**What happened:**
+- Added chords to the 17 chordless tunes: auto-harmonized a simple one-chord-per-bar I–IV–V first pass into `_auto-chorded-review/`, generated a proofing sheet, and Jason corrected all 17 by ear in Sibelius (re-exported MusicXML + saved 11 `.sib` masters).
+- Consolidated the final **70 tunes into `music/`** — 53 originals + Jason's 17 corrected — uniform slug-named `.musicxml`. Removed the old sample files (`Oh Susanna`, `Orange Blossom Special`).
+- Rebuilt **`music/index.json`** (app schema `{file,title,slug}` + extended: lesson_id, module, key, timeSignature, tempo, hasChords, videoLessonUrl, status).
+- Validation: 70/70 parse clean, 70/70 have chords, 70/70 mapped to a lesson, index matches files exactly.
+- Moved Jason's 11 corrected `.sib` into the masters folder (`Practice Engine - Sibelius for Export`). Fixed `js/playalong.js` `TUNE_FILE` (old sample was deleted) → `music/oh-susannah.musicxml`.
+
+**Decisions made:**
+- Fiddle Fiddle Little Star confirmed to be the Twinkle Melodic Variation, genuinely in A major (has G#); left in A unless transposed later.
+- Chord philosophy: simple, tonic-heavy I–IV–V; Jason's ear is final authority.
+
+**Next session should:**
+- Wire a tune selector into the app UI (`player.js` already reads `music/index.json`; `playalong.html` is still single-tune). This is the remaining app-code step to make all 70 selectable.
+- Optional: convert `.mxl`/`.xml`-sourced tunes already normalized; backfill genre/difficulty; add tabs.
+
+---
+
+## 2026-07-06 (cont.) — TUNE SELECTOR SHIPPED: all 70 tunes selectable (Cowork session with Jason)
+
+**What happened:** executed NEXT_STEP_PROMPT.md — the player is no longer single-tune.
+
+- **Tune picker UI** (`playalong.html`): search box + `<select>` dropdown above the transport, populated from `music/index.json`, grouped into `<optgroup>`s by module (19 groups), options labeled `"7.02 · Shady Grove (D)"`. Search filters by title/lesson_id/key live; the loaded tune stays selected if it survives the filter.
+- **`loadTune(rec)` refactor** (`js/playalong.js`): fetch → parse → tear down old schedule (`clearSchedule()`: dispose melody/organ Parts, clear kick repeat, `releaseAll()` both instruments so nothing rings over) → set tempo → reschedule → update title + lesson link + selector + URL. If the transport was playing, the new tune starts playing from the top — no extra Play click (audio context already unlocked). A `loadToken` guard drops stale fetches during rapid switching.
+- **Tempo per tune:** `rec.tempo || DEFAULT_BPM` (90, per the prompt; all 70 currently null so everything opens at 90).
+- **`?tune=<slug>` support** (Jason: yes) — same pattern as the AlphaTab embed, so WP lesson pages can embed the prototype pre-loaded. URL updates via `history.replaceState` on every switch (try/catch'd for odd embed contexts). No/unknown param → first tune in course order (Jason: Bile 'em Cabbage Down, 1.13).
+- **"Watch the lesson →" link** (Jason: yes) under the title, from `videoLessonUrl`, `target=_blank`.
+- **Course-order sort:** module numeric, then natural-sorted lesson_id (digit runs zero-padded, so 10.02 > 9.x).
+- **Compound-meter kick (new, not in the prompt):** 11 tunes are 6/8 and one is 9/8 (The Butterfly). Kick-per-quarter is wrong against a jig — `scheduleScore` now detects compound meter (`beatType 8 && beatsPerBar % 3 === 0`) and schedules the kick on the dotted-quarter pulse (`"4n."`).
+
+**Verification (headless — this sandbox has no browser/audio; protocol below is Jason's):**
+- All **70/70 XML files parse clean through the real app parser** (linkedom DOM): non-empty notes+chords, sane loop/pickup values, all melody notes within violin range.
+- **Full-app integration test**: playalong.js executed against the real playalong.html DOM with a behavior-recording Tone stub. Verified end-to-end: 70 options in 19 module groups; default = bile-em-cabbage-down at 90 BPM with URL `?tune=bile-em-cabbage-down`; play → switch to Kerfunken Jig mid-playback → old parts disposed + kick repeat cleared + releaseAll fired + playback continues without re-click + kick becomes `4n.` + URL/title/lesson-link update; stop → switch to The Butterfly (9/8) stays stopped, kick `4n.`; search "shady" filters to exactly Shady Grove; modules sort numerically.
+- One linkedom-only false alarm (its `<select>` lacks a `.value` setter; browsers have it) — shimmed in the harness, not an app issue.
+
+**NOT ear/browser-verified** — Jason's checklist after push: dropdown lists all 70; pick Shady Grove + a jig (e.g. Kerfunken) + Danny Boy; switch mid-playback (no overlap/stuck notes); jig kick feels right on the dotted-quarter pulse; search box; `?tune=shady-grove` URL; spacebar still works after switching.
+
+**Next:** promote-vs-parallel decision (replace index.html/the WP shortcode target with playalong.html?); genre/difficulty backfill; AB loop / section practice; AI-tutor integration.

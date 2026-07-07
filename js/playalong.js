@@ -16,7 +16,8 @@
   "use strict";
 
   // ---- Config -------------------------------------------------------------
-  const TUNE_FILE = "music/Oh Susanna.musicxml";
+  const INDEX_FILE = "music/index.json";
+  const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
     "https://cdn.jsdelivr.net/gh/nbrosowsky/tonejs-instruments/samples/violin/";
   // Confirmed-present samples (HTTP 200). Sampler interpolates the gaps.
@@ -31,6 +32,9 @@
   const $ = (id) => document.getElementById(id);
   const els = {
     title: $("tune-title"),
+    lessonLink: $("lesson-link"),
+    tuneSearch: $("tune-search"),
+    tuneSelect: $("tune-select"),
     status: $("status"),
     play: $("play"),
     pause: $("pause"),
@@ -229,6 +233,8 @@
   const engine = {
     ready: false,
     built: false,
+    tunes: [],        // index.json records, sorted in course order
+    current: null,    // the loaded tune's index.json record
     score: null,
     sampler: null,
     organ: null,
@@ -313,10 +319,14 @@
     }, chordEvents.map((c) => [beatToBBS(c.beat), c]));
     engine.organPart.start(0);
 
-    // Kick — one hit on every beat (quarter note), loops with the Transport.
+    // Kick — one hit per PULSE, loops with the Transport. In simple meters
+    // (4/4, 3/4, 2/4) the pulse is the quarter note. In compound meters
+    // (6/8 jigs, 9/8 slip jigs) the felt pulse is the dotted quarter — a
+    // quarter-note kick against a jig is rhythmically wrong.
+    const compound = s.beatType === 8 && s.beatsPerBar % 3 === 0;
     engine.kickEventId = Tone.Transport.scheduleRepeat((time) => {
       engine.kick.triggerAttackRelease("C2", "8n", time);
-    }, "4n", "0:0:0");
+    }, compound ? "4n." : "4n", "0:0:0");
 
     // Loop the tune. loopBeats = totalBeats minus the pickup, so the wrap
     // lands the pickup on the final bar's last beat(s) — no dead beat. Notes
@@ -327,11 +337,123 @@
     Tone.Transport.loopEnd = beatToBBS(s.loopBeats);
   }
 
+  // Tear down the previous tune's schedule so tunes never overlap.
+  function clearSchedule() {
+    if (engine.melodyPart) { engine.melodyPart.dispose(); engine.melodyPart = null; }
+    if (engine.organPart) { engine.organPart.dispose(); engine.organPart = null; }
+    if (engine.kickEventId !== null) {
+      Tone.Transport.clear(engine.kickEventId);
+      engine.kickEventId = null;
+    }
+    // Kill anything still sounding (held organ chord, ringing melody note).
+    if (engine.sampler && engine.sampler.releaseAll) engine.sampler.releaseAll();
+    if (engine.organ && engine.organ.releaseAll) engine.organ.releaseAll();
+  }
+
+  // =========================================================================
+  // 2b. TUNE LIBRARY (index.json) + loadTune
+  // =========================================================================
+
+  // Natural sort for lesson ids like "1.13", "10.02", "4b08": digit runs are
+  // zero-padded so string compare orders them numerically.
+  function lessonSortKey(id) {
+    return String(id)
+      .split(/(\d+)/)
+      .map((s) => (/^\d+$/.test(s) ? s.padStart(6, "0") : s))
+      .join("");
+  }
+  const byCourseOrder = (a, b) =>
+    a.module - b.module ||
+    lessonSortKey(a.lesson_id).localeCompare(lessonSortKey(b.lesson_id));
+
+  const tuneLabel = (r) => `${r.lesson_id} · ${r.title} (${r.key})`;
+
+  // (Re)populate the <select>, optionally filtered, grouped by module.
+  function buildSelector(filter) {
+    const q = (filter || "").trim().toLowerCase();
+    els.tuneSelect.innerHTML = "";
+    let group = null, groupModule = null;
+    for (const r of engine.tunes) {
+      if (q && !`${r.title} ${r.lesson_id} ${r.key}`.toLowerCase().includes(q))
+        continue;
+      if (r.module !== groupModule) {
+        group = document.createElement("optgroup");
+        group.label = `Module ${r.module}`;
+        els.tuneSelect.appendChild(group);
+        groupModule = r.module;
+      }
+      const opt = document.createElement("option");
+      opt.value = r.slug;
+      opt.textContent = tuneLabel(r);
+      group.appendChild(opt);
+    }
+    // Keep the loaded tune selected if it survived the filter.
+    const cur = engine.current && engine.current.slug;
+    if (cur && [...els.tuneSelect.options].some((o) => o.value === cur))
+      els.tuneSelect.value = cur;
+  }
+
+  // Load a tune record: fetch + parse its XML, reset tempo, reschedule.
+  // If a tune was playing, the new one starts playing from the top (no
+  // extra Play click needed — audio context is already unlocked).
+  let loadToken = 0;   // guards against rapid tune-switch races
+  async function loadTune(rec) {
+    const token = ++loadToken;
+    const wasPlaying =
+      typeof Tone !== "undefined" && Tone.Transport.state === "started";
+    Tone.Transport.stop();
+    Tone.Transport.position = 0;
+    clearSchedule();
+    setStatus("Loading tune…");
+    try {
+      const xml = await (await fetch("music/" + rec.file)).text();
+      if (token !== loadToken) return;   // a newer load superseded this one
+      engine.score = parseMusicXML(xml);
+      engine.current = rec;
+
+      els.title.textContent =
+        `${tuneLabel(rec)} — ${engine.score.notes.length} notes, `
+        + `${engine.score.chords.length} chords`;
+      if (rec.videoLessonUrl) {
+        els.lessonLink.href = rec.videoLessonUrl;
+        els.lessonLink.style.display = "";
+      } else {
+        els.lessonLink.style.display = "none";
+      }
+
+      // Tempo: per-tune value from index.json, else a practice-friendly default.
+      const bpm = rec.tempo || DEFAULT_BPM;
+      els.tempo.value = bpm;
+      els.tempoOut.textContent = `${bpm} BPM`;
+      Tone.Transport.bpm.value = bpm;
+
+      scheduleScore();
+
+      if (els.tuneSelect.value !== rec.slug) els.tuneSelect.value = rec.slug;
+      try {
+        history.replaceState(null, "", "?tune=" + rec.slug);
+      } catch (_) { /* file:// or exotic embed contexts — harmless */ }
+
+      if (wasPlaying) {
+        Tone.Transport.start();
+        setStatus("Playing.");
+      } else {
+        setStatus(engine.ready ? "Ready. Press Play." : "Loading violin samples…");
+        els.play.disabled = !engine.ready;
+        els.pause.disabled = true;
+        els.stop.disabled = true;
+      }
+      console.log(`[playalong] loaded ${rec.slug}:`, engine.score);
+    } catch (err) {
+      console.error(err);
+      setStatus("Error loading tune: " + err.message);
+    }
+  }
+
   // ---- Transport controls -------------------------------------------------
   async function onPlay() {
-    if (!engine.ready) return;
+    if (!engine.ready || !engine.melodyPart) return;
     await Tone.start();                       // unlock audio on user gesture
-    if (!engine.melodyPart) scheduleScore();  // first play only
     Tone.Transport.start();
     setStatus("Playing.");
     els.play.disabled = true;
@@ -389,6 +511,14 @@
     els.pause.addEventListener("click", onPause);
     els.stop.addEventListener("click", onStop);
 
+    // Tune picker: dropdown loads the tune; search box filters the dropdown.
+    els.tuneSelect.addEventListener("change", () => {
+      const rec = engine.tunes.find((t) => t.slug === els.tuneSelect.value);
+      if (rec && rec !== engine.current) loadTune(rec);
+    });
+    els.tuneSearch.addEventListener("input", () =>
+      buildSelector(els.tuneSearch.value));
+
     // Spacebar = play/pause (ignored while typing in a control).
     document.addEventListener("keydown", (e) => {
       if (e.code !== "Space") return;
@@ -401,15 +531,20 @@
     Tone.Transport.bpm.value = parseInt(els.tempo.value, 10);
 
     try {
-      setStatus("Loading tune…");
-      const xml = await (await fetch(TUNE_FILE)).text();
-      engine.score = parseMusicXML(xml);
-      els.title.textContent =
-        `${TUNE_FILE.split("/").pop().replace(/\.musicxml$/, "")} — `
-        + `${engine.score.notes.length} notes, ${engine.score.chords.length} chords`;
-      console.log("[playalong] parsed score:", engine.score);
+      setStatus("Loading tune library…");
+      const idx = await (await fetch(INDEX_FILE)).json();
+      engine.tunes = idx.slice().sort(byCourseOrder);
+      buildSelector("");
+
       buildInstruments();
-      setStatus("Loading violin samples…");
+
+      // ?tune=<slug> (the WP-embed pattern) picks the opening tune;
+      // otherwise the first tune in course order.
+      const slug = new URLSearchParams(location.search).get("tune");
+      const rec =
+        engine.tunes.find((t) => t.slug === slug) || engine.tunes[0];
+      if (!rec) throw new Error("empty tune index");
+      await loadTune(rec);
     } catch (err) {
       console.error(err);
       setStatus("Error: " + err.message);
