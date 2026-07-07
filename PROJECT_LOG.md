@@ -598,3 +598,20 @@ Jason's ask: loop the quarters/halves of a tune with one click (AABB practice). 
 **Jason ear-test:** Oh Susannah Full loop (should skip the opening silence AND wrap clean now); B1 on any 32-bar tune; a jig section; switch sections mid-play.
 
 **Roadmap note (Jason):** section loops = last planned feature for the prototype; next phase = DESIGN, then presumably promote to replace the AlphaTab embed.
+
+### 2026-07-07 — melody lag round 2: MEASURED per-sample onset compensation (on disk, NOT pushed)
+
+Jason (after section loops + articulation): melody still lags, more audible now that notes have separation — "like pizzicato vs bowing, less forgiveness for timing." Couldn't give a number, so we measured one.
+
+- **Measured the actual CDN violin samples** (ffmpeg → RMS envelope, 5.8ms windows): time to reach 30% of peak = the sample "speaking." Result: melody-range onsets are 46–110ms (A3 29ms … G4 110ms, E6 157ms) — the old global 40ms lead was less than half the real latency for most notes, and one global number can never fit a 3x spread.
+- **Per-note lead table** (`VIOLIN_ONSET`, hardcoded from measurements): each melody note now triggers early by its NEAREST SAMPLE's measured onset, scaled by the repitch rate (a shifted sample plays faster/slower, scaling its attack), plus `window.__leadBias` (default 0.02, live-tunable — raise if still dragging, 0 to trust the table raw). Capped at 0.18s.
+- **`Tone.context.lookAhead` 0.1 → 0.25** — the default lookahead would clamp leads >100ms (G4, E6); 250ms extra UI latency is invisible in a practice tool.
+- Replaces the old `window.__melodyLead` global knob.
+
+**Verified headless:** lead map for Bile = D4 82ms / E4 66ms / F#4 137ms (G4 sample repitched) / G4 130ms — matches measurement + bias exactly; all leads in bounds; lookAhead set.
+
+**Jason ear-test:** medium tempo first, then 140+. The fix is note-dependent now, so listen for CONSISTENCY (no single note dragging behind its neighbors) as much as overall placement. Knob: `window.__leadBias = 0.04` if the whole melody still sits late.
+
+### 2026-07-07 (cont.) — lead/gap dial turns (on disk, NOT pushed)
+
+Jason's ear after the measured-onset build: still lagging, and 0.08 same-pitch gap "robotic." Defaults adjusted: `__leadBias` 0.02 → **0.05** (perceived bow attack sits nearer 50%-of-peak than the measured 30% threshold — total leads now ~80–160ms per note), `__gapSame` 0.08 → **0.05**. Note the interplay: the lead pulls the NEXT note earlier, which also eats into the audible gap — so these two moves compound in the direction Jason wants. Both remain live-tunable in console. If lag persists after this, next suspects: (a) verify he's on the new build (stale cache has bitten before), (b) different sample set with faster attacks (the real fix if the nbrosowsky samples are just too soft-edged for practice use).

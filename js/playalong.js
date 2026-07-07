@@ -283,6 +283,10 @@
   };
 
   function buildInstruments() {
+    // Extra scheduling headroom: melody notes trigger up to ~180ms EARLY to
+    // compensate sample onsets; the default 100ms lookahead would clamp the
+    // bigger leads (G4, E6). 250ms of UI latency is fine for a practice tool.
+    if (Tone.context && "lookAhead" in Tone.context) Tone.context.lookAhead = 0.25;
     // Per-layer gain → independent volume sliders (MetroDrone Tone.Gain pattern).
     engine.melodyGain = new Tone.Gain(els.melVol.value / 100).toDestination();
     engine.organGain = new Tone.Gain(els.orgVol.value / 100).toDestination();
@@ -333,7 +337,38 @@
     // triggering melody notes early by a fixed wall-clock lead. Clamped so the
     // first note can't be scheduled in the past. Live-tunable in the console:
     // window.__melodyLead = 0.06 (seconds).
-    window.__melodyLead = window.__melodyLead ?? 0.04;
+    // MEASURED SAMPLE ONSETS (2026-07-07): seconds for each violin sample's
+    // amplitude envelope to reach 30% of its peak (ffmpeg/RMS analysis of the
+    // actual CDN mp3s). A bowed sample "speaks" this long after triggering —
+    // the source of the melody dragging. Varies 3x across samples (A3 29ms,
+    // G4 110ms), so a single global lead can't be right for every note.
+    const VIOLIN_ONSET = {
+      G3: 0.041, A3: 0.029, C4: 0.070, E4: 0.046, G4: 0.110,
+      A4: 0.075, C5: 0.075, E5: 0.064, G5: 0.064, A5: 0.058,
+      C6: 0.081, E6: 0.157, G6: 0.075, A6: 0.070, C7: 0.052,
+    };
+    const NAME_MIDI = {};   // "G4" → 67, etc.
+    for (const name of Object.keys(VIOLIN_ONSET)) {
+      NAME_MIDI[name] =
+        pitchToMidi(name[0], 0, parseInt(name.slice(1), 10));
+    }
+    // Per-note lead: nearest sample's onset, scaled by the repitch rate
+    // (Sampler plays a shifted sample faster/slower, which scales its attack
+    // too), plus a small global bias. Live-tunable: window.__leadBias (secs,
+    // default 0.02; raise if the melody still drags, 0 to trust the table).
+    // 7/7 Jason ear-test: still dragging at bias 0.02 → raised to 0.05.
+    // (The 30%-of-peak onset measure likely underestimates PERCEIVED attack
+    // on bowed samples; perceived onset sits nearer 50% of peak.)
+    window.__leadBias = window.__leadBias ?? 0.05;
+    function melodyLeadFor(midi) {
+      let bestName = "A4", bestD = Infinity;
+      for (const name in NAME_MIDI) {
+        const d = Math.abs(midi - NAME_MIDI[name]);
+        if (d < bestD) { bestD = d; bestName = name; }
+      }
+      const rate = Math.pow(2, (midi - NAME_MIDI[bestName]) / 12);
+      return Math.min(0.18, VIOLIN_ONSET[bestName] / rate + window.__leadBias);
+    }
 
     // ARTICULATION: how each note ends depends on what follows it.
     //   "slur" — next transition is under a notated slur → full legato, no gap.
@@ -344,7 +379,7 @@
     //            different-pitch transitions were fine as they were.
     // Gaps are wall-clock, capped as a fraction of the note so fast passages
     // never choke. Live-tunable: window.__gapSame / window.__gapDiff (secs).
-    window.__gapSame = window.__gapSame ?? 0.08;
+    window.__gapSame = window.__gapSame ?? 0.05;   // 0.08 read as robotic (7/7)
     window.__gapDiff = window.__gapDiff ?? 0;
     const melodyEvents = s.notes.map((n, i) => {
       const next = s.notes[i + 1];
@@ -360,7 +395,7 @@
       if (ev.artic === "same") gap = Math.min(window.__gapSame, full * 0.35);
       else if (ev.artic === "diff") gap = Math.min(window.__gapDiff, full * 0.2);
       const dur = Math.max(0.05, full - gap);
-      const when = Math.max(time - window.__melodyLead, Tone.now());
+      const when = Math.max(time - melodyLeadFor(ev.midi), Tone.now());
       engine.sampler.triggerAttackRelease(
         Tone.Frequency(ev.midi, "midi").toNote(), dur, when);
     }, melodyEvents);
