@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.2";
+  const APP_VERSION = "1.3";
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -273,6 +273,7 @@
     tunes: [],        // index.json records, sorted in course order
     current: null,    // the loaded tune's index.json record
     section: null,    // active loop section { label, start, end } in beats
+    sectionsList: [], // all sections for the loaded tune ([0] = Full)
     score: null,
     sampler: null,
     organ: null,
@@ -283,6 +284,11 @@
     melodyPart: null,
     organPart: null,
     kickEventId: null,
+    // Sheet music (OSMD)
+    osmd: null,       // OpenSheetMusicDisplay instance (null if CDN failed)
+    scoreXml: null,   // raw MusicXML of the loaded tune (for resize re-render)
+    noteMap: [],      // [{ beat, durBeats, el }] sorted by beat — beat→SVG map
+    activeEls: [],    // SVG <g> elements currently painted red
   };
 
   function buildInstruments() {
@@ -508,6 +514,7 @@
 
   function renderSections() {
     const secs = buildSections();
+    engine.sectionsList = secs;
     els.sections.innerHTML = "";
     if (secs.length > 1) {
       const lab = document.createElement("span");
@@ -525,6 +532,188 @@
       }
     }
     setSection(secs[0]);   // default = Full (also sets Transport loop points)
+  }
+
+  // =========================================================================
+  // 2c. SHEET MUSIC (OpenSheetMusicDisplay)
+  //     Renders the SAME MusicXML the audio engine plays, then highlights the
+  //     sounding note in FiddleHed red. Sync source = Tone.Transport ticks
+  //     (the musical beat), NOT the audio triggers — melody notes fire up to
+  //     ~200ms early (the sample-onset lead system), and following those
+  //     would make the highlight look rushed.
+  //     The score is an ENHANCEMENT: any failure here (CDN down, render bug)
+  //     must never break audio, so everything is wrapped defensively.
+  // =========================================================================
+
+  function buildOsmd() {
+    if (typeof opensheetmusicdisplay === "undefined") return;   // CDN failed
+    try {
+      engine.osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(
+        $("score"), {
+          autoResize: false,          // we re-render + rebuild the map ourselves
+          backend: "svg",
+          drawTitle: false,           // the app header already shows the title
+          drawSubtitle: false,
+          drawComposer: false,
+          drawLyricist: false,
+          drawPartNames: false,
+          drawingParameters: "compacttight",
+        });
+    } catch (err) {
+      console.error("[sheet] OSMD init failed:", err);
+      engine.osmd = null;
+    }
+  }
+
+  // Render the loaded tune's MusicXML and rebuild the beat→SVG note map.
+  async function renderScore(xmlText) {
+    if (!engine.osmd) return;
+    engine.noteMap = [];
+    engine.activeEls = [];
+    try {
+      engine.scoreXml = xmlText;
+      await engine.osmd.load(xmlText);
+      engine.osmd.render();
+      if (engine.osmd.cursor) engine.osmd.cursor.hide();  // we paint notes instead
+      buildNoteMap();
+    } catch (err) {
+      // Score failure is non-fatal — audio keeps working.
+      console.error("[sheet] render failed:", err);
+      engine.noteMap = [];
+    }
+  }
+
+  // Walk OSMD's playback iterator and map every drawn note to its onset beat
+  // (quarter notes, same unit as the parser) and its SVG <g> element.
+  // Also wires click-to-seek on each note.
+  function buildNoteMap() {
+    const osmd = engine.osmd;
+    const map = [];
+    osmd.cursor.reset();
+    const it = osmd.cursor.Iterator;
+    let lastBeat = -Infinity;
+    while (!it.EndReached) {
+      const beat = it.currentTimeStamp.RealValue * 4;   // whole notes → quarters
+      // Guard: if the iterator follows a repeat back-jump, timestamps regress.
+      // The audio parser reads measures linearly (no repeats), so stop there —
+      // the map must stay sorted and match the audio timeline.
+      if (beat < lastBeat - 1e-6) break;
+      lastBeat = beat;
+      for (const ve of it.CurrentVoiceEntries || []) {
+        for (const note of ve.Notes || []) {
+          if (!note || (note.isRest && note.isRest())) continue;
+          let el = null;
+          try {
+            const g = osmd.rules.GNote(note);
+            el = g && g.getSVGGElement ? g.getSVGGElement() : null;
+          } catch (_) { /* note without graphics — skip */ }
+          if (!el) continue;
+          const durBeats = note.Length ? note.Length.RealValue * 4 : 0.25;
+          map.push({ beat, durBeats, el });
+          el.classList.add("pe-note-click");
+          el.addEventListener("click", () => seekToBeat(beat));
+        }
+      }
+      it.moveToNext();
+    }
+    osmd.cursor.reset();
+    osmd.cursor.hide();
+    map.sort((a, b) => a.beat - b.beat);
+    engine.noteMap = map;
+    console.log(`[sheet] note map: ${map.length} notes`);
+  }
+
+  // Click-to-seek. If the target beat is outside the active loop section,
+  // fall back to the section that contains it (preferring the current one,
+  // else the tightest match, else Full) so the Transport doesn't sail past
+  // its loop window.
+  function seekToBeat(beat) {
+    if (!engine.score) return;
+    const sec = engine.section;
+    if (sec && (beat < sec.start - 1e-6 || beat >= sec.end - 1e-6)) {
+      const candidates = engine.sectionsList.filter(
+        (s) => beat >= s.start - 1e-6 && beat < s.end - 1e-6);
+      // Tightest containing section = most useful loop around the clicked spot;
+      // sectionsList[0] (Full) contains everything as the fallback.
+      const best = candidates.sort(
+        (a, b) => (a.end - a.start) - (b.end - b.start))[0]
+        || engine.sectionsList[0];
+      if (best) setSection(best);
+    }
+    Tone.Transport.position = beatToBBS(beat);
+    updateHighlight(true);   // instant feedback even while stopped
+  }
+
+  // Highlight the note(s) sounding at the current Transport position.
+  // Runs from a rAF loop; cheap enough to call every frame (<200 notes).
+  let lastPaintedTicks = -1;
+  function updateHighlight(force) {
+    if (!engine.noteMap.length) return;
+    const ticks = Tone.Transport.ticks;
+    if (!force && ticks === lastPaintedTicks) return;   // nothing moved
+    lastPaintedTicks = ticks;
+    const pos = ticks / Tone.Transport.PPQ;             // quarter-note beats
+
+    const active = [];
+    for (const e of engine.noteMap) {
+      if (e.beat > pos + 1e-6) break;                   // sorted — done
+      if (pos < e.beat + Math.max(e.durBeats, 0.15)) active.push(e);
+    }
+    // Keep only the latest onset among overlaps (a long held note shouldn't
+    // stay lit through the notes after it — but chords sharing an onset all light).
+    const latest = active.length
+      ? Math.max(...active.map((e) => e.beat)) : null;
+    const els2 = active.filter((e) => e.beat === latest).map((e) => e.el);
+
+    if (sameEls(els2, engine.activeEls)) return;
+    for (const el of engine.activeEls) el.classList.remove("pe-active");
+    for (const el of els2) el.classList.add("pe-active");
+    engine.activeEls = els2;
+
+    autoScroll(els2[0]);
+  }
+
+  function sameEls(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+
+  // Keep the sounding note in a comfortable vertical band while playing.
+  function autoScroll(el) {
+    if (!el || Tone.Transport.state !== "started") return;
+    const r = el.getBoundingClientRect();
+    const pad = 90;
+    if (r.top < pad || r.bottom > window.innerHeight - pad) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  // The paint loop — one rAF, runs for the page's life. Highlight updates
+  // whenever the Transport position changes (playing, seeking, or section
+  // jumps), so a stopped app still shows where Play will start.
+  function startPaintLoop() {
+    (function frame() {
+      try { updateHighlight(false); } catch (_) { /* never kill the loop */ }
+      requestAnimationFrame(frame);
+    })();
+  }
+
+  // Window resize: OSMD must re-render (new line breaks), which rebuilds the
+  // SVG — so the note map and its click handlers are rebuilt too.
+  let resizeTimer = null;
+  function wireScoreResize() {
+    window.addEventListener("resize", () => {
+      if (!engine.osmd || !engine.scoreXml) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        try {
+          engine.osmd.render();
+          buildNoteMap();
+          updateHighlight(true);
+        } catch (err) { console.error("[sheet] resize re-render failed:", err); }
+      }, 300);
+    });
   }
 
   // =========================================================================
@@ -581,6 +770,8 @@
     Tone.Transport.stop();
     Tone.Transport.position = 0;
     clearSchedule();
+    engine.noteMap = [];      // stale SVG refs die with the old render
+    engine.activeEls = [];
     setStatus("Loading tune…");
     try {
       const xml = await (await fetch("music/" + rec.file)).text();
@@ -606,6 +797,10 @@
 
       scheduleScore();
       renderSections();   // rebuild loop buttons for this tune; resets to Full
+
+      // Sheet music — after audio is fully set up, never blocking it.
+      await renderScore(xml);
+      updateHighlight(true);
 
       if (els.tuneSelect.value !== rec.slug) els.tuneSelect.value = rec.slug;
       try {
@@ -710,6 +905,10 @@
     });
 
     Tone.Transport.bpm.value = parseInt(els.tempo.value, 10);
+
+    buildOsmd();          // sheet-music renderer (no-op if the CDN failed)
+    wireScoreResize();
+    startPaintLoop();
 
     try {
       setStatus("Loading tune library…");

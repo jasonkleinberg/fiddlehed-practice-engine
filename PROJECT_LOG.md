@@ -643,3 +643,22 @@ Fix: `melodyLeadFor` now adds a tempo term — `__leadTempo * (bpm/60 − 1)`, z
 ### 2026-07-07 (cont.) — v1.2: spacing zeroed for an A/B timing experiment (on disk, NOT pushed)
 
 Jason wants to hear timing feel WITHOUT the articulation spacing (the pre-spacing sound), suspecting the gaps interact with perceived lag. Rather than a git rollback (which would also revert the measured/tempo-aware leads and muddy the experiment), only the spacing default changed: `__gapSame` 0.05 → **0**. Everything else current (per-note onset table, tempo-aware lead, slur parsing — now a no-op at gap 0). Live A/B in console: `__gapSame = 0.05` restores spacing mid-playback, `= 0` removes it. Depending on verdict, either bake in 0 (drop spacing) or restore 0.05.
+
+### 2026-07-07 (cont.) — v1.3: SHEET MUSIC VIEWER with synced note highlighting (on disk, NOT pushed)
+
+The Soundslice-style feature: the score renders on screen and the sounding note lights up FiddleHed red as the audio plays.
+
+**How it's built:**
+- **Renderer = OpenSheetMusicDisplay (OSMD) 1.9.0** (CDN, ~1.1MB) drawing the SAME MusicXML the audio engine parses — one source of truth, zero format conversion. AlphaTab was the old candidate for on-screen notation; OSMD won because it consumes our MusicXML directly and exposes each note's SVG element.
+- **Sync source = Tone.Transport ticks (the musical beat), NOT the audio triggers.** Melody notes fire up to ~200ms early (the sample-onset lead system); following the triggers would make the highlight look rushed. A rAF loop maps `Transport.ticks / PPQ` → the note map → paints via CSS class (`.pe-active`, #990034).
+- **Note map**: OSMD's cursor iterator walks the score once per render, emitting `{beat, durBeats, svgEl}` per drawn note (beats in quarters, same unit as the parser). Guard against repeat back-jumps keeps the map linear like the audio timeline.
+- **Click-to-seek**: every note is clickable → Transport jumps to that beat. If the click lands outside the active loop section, the app switches to the tightest section containing it (else Full) so the loop window stays sane.
+- **Auto-scroll**: the active note is kept in a comfortable vertical band while playing (smooth scrollIntoView, only when it leaves the band).
+- **Resize** re-renders + rebuilds the map (autoResize off — OSMD's own would orphan our SVG refs).
+- Score is an enhancement: any OSMD failure logs and audio keeps working. Layout widened 640 → 960px for the score.
+
+**Verified headless (real Chromium):** all 70 tunes render + build note maps, map size ≥ parsed note count, first-onset alignment exact on every tune (both pickup conventions included), notes clickable, click-to-seek lands on the exact beat with instant highlight, zero page errors.
+
+**Notes for Jason's browser check:** OSMD won't look identical to Sibelius engraving (same notes, web spacing/fonts). Chord symbols from `<harmony>` render above the staff. The score should make the July proofread pass easier — score + audio in one tab.
+
+**Next:** Jason push + browser check (hard-refresh, confirm v1.3 badge). Then the pending v1.2 spacing A/B and the tempo-lead ear-test.

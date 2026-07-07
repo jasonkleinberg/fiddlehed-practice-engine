@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: Georgia, serif;
-      max-width: 640px;
+      max-width: 960px;   /* widened for the sheet-music view (was 640px) */
       margin: 2rem auto;
       padding: 0 1rem;
       line-height: 1.5;
@@ -42,6 +42,29 @@
     .layers h2 { font-size: 1rem; margin: 0.75rem 0 0; color: #444; }
     .status { margin-top: 1rem; color: #666; font-size: 0.9rem; min-height: 1.2em; }
     .hint { color: #999; font-size: 0.8rem; }
+
+    /* ---- Sheet music (OSMD) ---- */
+    .score-wrap {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin-top: 1.5rem;
+      padding: 0.5rem 0.75rem 1rem;
+      background: #fff;
+      overflow-x: auto;   /* narrow screens: score scrolls sideways, not the page */
+    }
+    .score-wrap .score-hint {
+      color: #999; font-size: 0.8rem; margin: 0.25rem 0 0;
+    }
+    #score { min-height: 120px; }
+    #score svg { display: block; }
+    /* Notes are clickable (click-to-seek) */
+    .pe-note-click { cursor: pointer; }
+    /* The sounding note: FiddleHed red. CSS beats VexFlow's presentation
+       attributes, and removing the class reverts cleanly. */
+    .pe-active, .pe-active * {
+      fill: #990034 !important;
+      stroke: #990034 !important;
+    }
   </style>
 </head>
 <body>
@@ -65,6 +88,11 @@
   <div class="slider tempo">
     <label for="tempo">Tempo: <span id="tempo-readout">80 BPM</span></label>
     <input type="range" id="tempo" min="40" max="200" value="80" step="1" />
+  </div>
+
+  <div class="score-wrap">
+    <div id="score" aria-label="Sheet music"></div>
+    <p class="score-hint">Click any note to jump there. The red note is what's playing.</p>
   </div>
 
   <div class="layers">
@@ -91,6 +119,7 @@
   <p class="hint">Spacebar toggles play/pause. Three layers, one Tone.js clock. <span id="version"></span></p>
 
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <script src="js/playalong.js"></script>
 </body>
 </html>
