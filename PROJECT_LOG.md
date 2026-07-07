@@ -581,3 +581,7 @@ Jason's ear-test feedback on the 70-tune build: notes run together — "almost s
 **Verified headless:** 70/70 parse; slur classification spot-checked (Angeline the Baker legato map matches its slur clusters; Bile = 15/24 "same" transitions); full-app integration test passes — slurred notes play full duration, others shortened with the floor respected, `?tune=` still honored.
 
 **Jason's ear-test:** Bile 'em Cabbage Down (repeated-note city) for the "same" gap; Angeline the Baker for slurs still legato; a jig at speed for the fast-passage floor. Tune with `__gapSame`/`__gapDiff` if needed and report keepers.
+
+### 2026-07-06 (cont.) — articulation round 2: revert global changes, same-pitch-only (on disk, NOT pushed)
+
+Jason's ear-test of articulation round 1: "robotic," and tuning `__gapSame` (0.8 down to 0.009) didn't fix it. Diagnosis: `__gapSame` only affects repeated notes, but the roboticness was global → the culprits were the two GLOBAL changes: the "diff" gap (0.05s between every different-pitch pair) + sampler release cut 0.4→0.2 (abrupt note endings). Reverted both: **release back to 0.4, `__gapDiff` default 0**. Kept: slur handling and same-pitch separation, with `__gapSame` default softened to **0.08**. Net effect vs the version Jason liked: ONLY back-to-back repeated notes changed; everything else is bit-identical. Knobs still live for tuning. Note: with the 0.4 release tail restored, the same-pitch gap reads as a re-attack rather than silence — that's the "slight articulation" being asked for.

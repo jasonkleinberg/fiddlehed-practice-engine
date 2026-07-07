@@ -274,7 +274,7 @@
     engine.sampler = new Tone.Sampler({
       urls: VIOLIN_URLS,
       baseUrl: VIOLIN_BASE,
-      release: 0.2,   // was 0.4 — the long fade-out smeared note separation
+      release: 0.4,   // restored — 0.2 made every note ending abrupt/robotic
       onload: () => {
         engine.ready = true;
         enableTransport();
@@ -321,11 +321,13 @@
     //   "slur" — next transition is under a notated slur → full legato, no gap.
     //   "same" — next note is the SAME pitch, back-to-back → clear separation
     //            (otherwise repeated notes blur into one pulse).
-    //   "diff" — different pitch → subtle separation (light detaché).
+    //   "diff" — different pitch → UNCHANGED (gap 0). Jason's 7/6 verdict:
+    //            any global gap + shortened release made everything robotic;
+    //            different-pitch transitions were fine as they were.
     // Gaps are wall-clock, capped as a fraction of the note so fast passages
     // never choke. Live-tunable: window.__gapSame / window.__gapDiff (secs).
-    window.__gapSame = window.__gapSame ?? 0.15;
-    window.__gapDiff = window.__gapDiff ?? 0.05;
+    window.__gapSame = window.__gapSame ?? 0.08;
+    window.__gapDiff = window.__gapDiff ?? 0;
     const melodyEvents = s.notes.map((n, i) => {
       const next = s.notes[i + 1];
       let artic = "diff";
