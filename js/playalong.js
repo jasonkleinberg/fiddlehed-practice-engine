@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.6";
+  const APP_VERSION = "1.7";
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -66,12 +66,103 @@
     return (octave + 1) * 12 + STEP_SEMITONE[step] + (alter || 0);
   }
 
+  // REPEAT / VOLTA EXPANSION (v1.7). MusicXML notates repeats as barline
+  // marks; playback must EXPAND them: ‖: A :‖ plays A twice, and volta
+  // brackets (1st/2nd endings) pick different bars per pass. Returns the
+  // measure indices in playback order. Rules of thumb this implements:
+  //   - a backward repeat jumps to the last forward repeat (or the start of
+  //     the piece / the bar after the previous finished repeat section);
+  //   - an ending bracket whose numbers don't include the current pass is
+  //     skipped (jump past its stop barline);
+  //   - a played ending with no backward repeat closes the section.
+  // Nested repeats and D.C./D.S. are not handled (none in this library).
+  function expandRepeats(measures) {
+    const info = measures.map((m) => {
+      const r = { fwd: false, back: false, times: 2,
+                  endingNums: null, endingStops: false };
+      for (const bl of m.querySelectorAll(":scope > barline")) {
+        const rep = bl.querySelector("repeat");
+        if (rep) {
+          const dir = rep.getAttribute("direction");
+          if (dir === "forward") r.fwd = true;
+          if (dir === "backward") {
+            r.back = true;
+            r.times = parseInt(rep.getAttribute("times") || "2", 10) || 2;
+          }
+        }
+        for (const end of bl.querySelectorAll("ending")) {
+          const type = end.getAttribute("type");
+          if (type === "start") {
+            r.endingNums = (end.getAttribute("number") || "")
+              .split(/[,\s]+/).filter(Boolean).map(Number);
+          } else {
+            r.endingStops = true;          // "stop" or "discontinue"
+          }
+        }
+      }
+      return r;
+    });
+
+    // Sibelius-export quirk (Fisher's Hornpipe): the "2nd ending" start
+    // stamped on the SAME measure whose right barline is the backward
+    // repeat — contradictory, since the repeat belongs inside the 1st
+    // ending. Trust the repeat: that bar closes ending 1, and the real
+    // 2nd ending starts at the following measure.
+    for (let i = 0; i + 1 < info.length; i++) {
+      const r = info[i];
+      if (r.endingNums && !r.endingNums.includes(1) && r.back
+          && !info[i + 1].endingNums) {
+        info[i + 1].endingNums = r.endingNums;
+        r.endingNums = null;
+      }
+    }
+
+    const order = [];
+    const cap = measures.length * 8 + 16;  // runaway guard
+    let i = 0, repeatStart = 0, pass = 1, inEnding = false;
+    while (i < measures.length && order.length < cap) {
+      const m = info[i];
+      if (m.fwd) repeatStart = i;
+      if (m.endingNums && !m.endingNums.includes(pass)) {
+        // Wrong volta for this pass — skip its bracket. The bracket ends at
+        // an explicit stop barline, or (sloppy exports) where the next
+        // bracket begins.
+        let j = i;
+        while (j < measures.length) {
+          const stopHere = info[j].endingStops;
+          j++;
+          if (stopHere) break;
+          if (j < measures.length && info[j].endingNums) break;
+        }
+        i = j;
+        continue;
+      }
+      if (m.endingNums) inEnding = true;
+      order.push(i);
+      if (m.back && pass < m.times) {
+        pass++;
+        inEnding = false;
+        i = repeatStart;                    // take the repeat
+      } else {
+        if (m.back || (m.endingStops && inEnding)) {
+          // Passed the final ending / final repeat — section is closed.
+          pass = 1;
+          repeatStart = i + 1;
+          inEnding = false;
+        }
+        i++;
+      }
+    }
+    return order;
+  }
+
   function parseMusicXML(xmlText) {
     const doc = new DOMParser().parseFromString(xmlText, "application/xml");
     if (doc.querySelector("parsererror")) throw new Error("Bad MusicXML");
 
     const part = doc.querySelector("part");
     const measures = [...part.querySelectorAll("measure")];
+    const playOrder = expandRepeats(measures);
 
     let divisions = null;       // ticks per quarter note (locked at first read)
     let beatsPerBar = 4, beatType = 4;
@@ -80,9 +171,14 @@
     let lastNoteOnset = 0;      // onset of the previous (non-chord) note
     const rawNotes = [];        // { tick, durTick, midi, tieStart, tieStop }
     const chords = [];          // { tick, rootStep, rootAlter, kind }
+    const playInstances = [];   // { measureIdx, startTick } — playback order,
+                                // incl. repeats; the sheet-music beat map
+                                // needs it to light repeated bars every pass.
 
-    for (const m of measures) {
+    for (const mi of playOrder) {
+      const m = measures[mi];
       const measureStart = cursor;
+      playInstances.push({ measureIdx: mi, startTick: measureStart });
       for (const el of [...m.children]) {
         switch (el.tagName) {
           case "attributes": {
@@ -215,6 +311,10 @@
       bodyStartBeats,
       totalBeats,
       loopBeats: totalBeats - pickupBeats,   // loop END (start = loopStartBeats)
+      playInstances: playInstances.map((p) => ({
+        measureIdx: p.measureIdx,
+        startBeat: p.startTick / tpb,
+      })),
       notes: notes.map((n) => ({
         beat: n.tick / tpb,
         durBeats: n.durTick / tpb,
@@ -558,11 +658,89 @@
           drawComposer: false,
           drawLyricist: false,
           drawPartNames: false,
+          drawFingerings: true,
+          fingeringPosition: "above",   // fiddle-tab fingerings sit over notes
           drawingParameters: "compacttight",
         });
     } catch (err) {
       console.error("[sheet] OSMD init failed:", err);
       engine.osmd = null;
+    }
+  }
+
+  // DISPLAY PREPROCESS (v1.7). Some Sibelius exports (the Ballydesmond
+  // Polkas) wrote fiddle-tab fingerings ("2", "A0", "G1"…) as free-floating
+  // <words> DIRECTIONS instead of per-note fingerings. OSMD stacks each
+  // words-direction higher to dodge the previous one → the fingering
+  // staircase climbing off the page. Fix: convert each to a proper
+  // <fingering> on the note that follows it, so OSMD anchors it to the
+  // notehead. Also drops the "Arranged for awesome fiddle students…" blurb
+  // those exports left floating mid-score. Display-only — the audio parser
+  // never read <words>.
+  // One fingering token: optional string letter, optional Low/High mark,
+  // finger number — covers "2", "A0", "G1", "L2", "H3", "AL1". Some exports
+  // cram several tokens in one words element separated by tab runs
+  // ("A0\t…\tD0\tL2") — treat all-token text as fingerings too.
+  const FINGERING_TOKEN = /^[GDAE]?[LH]?[0-4]$/;
+  const isFingeringText = (text) => {
+    const toks = text.split(/\s+/).filter(Boolean);
+    return toks.length > 0 && toks.every((t) => FINGERING_TOKEN.test(t));
+  };
+  function preprocessForDisplay(xmlText) {
+    try {
+      const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+      if (doc.querySelector("parsererror")) return xmlText;
+      let changed = false;
+      for (const dir of [...doc.querySelectorAll("part direction")]) {
+        const words = dir.querySelector("direction-type > words");
+        if (!words) continue;
+        const text = (words.textContent || "").trim();
+        if (/arranged for/i.test(text)) {
+          dir.remove(); changed = true;
+          continue;
+        }
+        if (!isFingeringText(text)) continue;
+        // Find the next <note> (same measure, else the following measures).
+        let note = null;
+        let el = dir.nextElementSibling, meas = dir.parentElement;
+        while (!note && meas) {
+          while (el) {
+            if (el.tagName === "note") { note = el; break; }
+            el = el.nextElementSibling;
+          }
+          if (!note) {
+            meas = meas.nextElementSibling;
+            el = meas ? meas.firstElementChild : null;
+          }
+        }
+        if (note) {
+          let notations = note.querySelector(":scope > notations");
+          if (!notations) {
+            notations = doc.createElement("notations");
+            note.appendChild(notations);
+          }
+          let technical = notations.querySelector(":scope > technical");
+          if (!technical) {
+            technical = doc.createElement("technical");
+            notations.appendChild(technical);
+          }
+          const f = doc.createElement("fingering");
+          f.setAttribute("placement", "above");
+          f.textContent = text.split(/\s+/).filter(Boolean).join(" ");
+          technical.appendChild(f);
+        }
+        dir.remove();   // even unanchored, a stray words-direction must go
+        changed = true;
+      }
+      if (!changed) return xmlText;
+      // XMLSerializer omits the XML declaration; OSMD's load() requires it.
+      let out = new XMLSerializer().serializeToString(doc);
+      if (!out.startsWith("<?xml"))
+        out = '<?xml version="1.0" encoding="UTF-8"?>\n' + out;
+      return out;
+    } catch (err) {
+      console.error("[sheet] display preprocess failed:", err);
+      return xmlText;
     }
   }
 
@@ -572,6 +750,7 @@
     engine.noteMap = [];
     engine.activeEls = [];
     try {
+      xmlText = preprocessForDisplay(xmlText);
       engine.scoreXml = xmlText;
       await engine.osmd.load(xmlText);
       // 8 library files kept a second staff (duet/viola part) from the
@@ -591,44 +770,70 @@
     }
   }
 
-  // Walk OSMD's playback iterator and map every drawn note to its onset beat
-  // (quarter notes, same unit as the parser) and its SVG <g> element.
-  // Also wires click-to-seek on each note.
+  // Map every drawn note to its onset beat(s) and its SVG <g> element.
+  // v1.7: walks the GRAPHIC sheet measure-by-measure (not the playback
+  // iterator, whose timestamps regress at repeat back-jumps). The audio
+  // timeline now EXPANDS repeats, so a note inside a repeated section is
+  // entered once per pass — the same SVG element lights up on every pass.
+  // playInstances (from the parser) supplies each measure's played start
+  // beat(s); a note's played beat = instance start + offset in the measure.
+  // Also wires click-to-seek on each note (first pass inside the active
+  // section, else the note's first pass).
   function buildNoteMap() {
     const osmd = engine.osmd;
     const map = [];
-    osmd.cursor.reset();
-    const it = osmd.cursor.Iterator;
-    let lastBeat = -Infinity;
-    while (!it.EndReached) {
-      const beat = it.currentTimeStamp.RealValue * 4;   // whole notes → quarters
-      // Guard: if the iterator follows a repeat back-jump, timestamps regress.
-      // The audio parser reads measures linearly (no repeats), so stop there —
-      // the map must stay sorted and match the audio timeline.
-      if (beat < lastBeat - 1e-6) break;
-      lastBeat = beat;
-      for (const ve of it.CurrentVoiceEntries || []) {
-        for (const note of ve.Notes || []) {
-          if (!note || (note.isRest && note.isRest())) continue;
-          let el = null;
-          try {
-            const g = osmd.rules.GNote(note);
-            el = g && g.getSVGGElement ? g.getSVGGElement() : null;
-          } catch (_) { /* note without graphics — skip */ }
-          if (!el) continue;
-          const durBeats = note.Length ? note.Length.RealValue * 4 : 0.25;
-          map.push({ beat, durBeats, el });
-          el.classList.add("pe-note-click");
-          el.addEventListener("click", () => seekToBeat(beat));
+    if (!osmd.GraphicSheet || !engine.score) return;
+    // Group played start-beats by notated measure index.
+    const starts = {};
+    for (const p of engine.score.playInstances || []) {
+      (starts[p.measureIdx] = starts[p.measureIdx] || []).push(p.startBeat);
+    }
+    const src = osmd.Sheet ? osmd.Sheet.SourceMeasures : [];
+    const gms = osmd.GraphicSheet.MeasureList || [];
+    for (let mi = 0; mi < gms.length; mi++) {
+      const passes = starts[mi];
+      if (!passes || !passes.length) continue;
+      // Beat offset within the measure comes from the source timestamps.
+      const measTs = src[mi] ? src[mi].AbsoluteTimestamp.RealValue * 4 : 0;
+      for (const gm of gms[mi] || []) {
+        if (!gm) continue;
+        const inst = gm.ParentStaff && gm.ParentStaff.ParentInstrument;
+        if (inst && inst.Visible === false) continue;   // hidden duet staff
+        for (const se of gm.staffEntries || []) {
+          const abs = se.getAbsoluteTimestamp
+            ? se.getAbsoluteTimestamp().RealValue * 4
+            : measTs + (se.relInMeasureTimestamp
+                ? se.relInMeasureTimestamp.RealValue * 4 : 0);
+          const off = abs - measTs;
+          for (const gve of se.graphicalVoiceEntries || []) {
+            for (const gn of gve.notes || []) {
+              const sn = gn && gn.sourceNote;
+              if (!sn || (sn.isRest && sn.isRest())) continue;
+              let el = null;
+              try {
+                el = gn.getSVGGElement ? gn.getSVGGElement() : null;
+              } catch (_) { /* note without graphics — skip */ }
+              if (!el) continue;
+              const durBeats = sn.Length ? sn.Length.RealValue * 4 : 0.25;
+              const beats = passes.map((s) => s + off);
+              for (const b of beats) map.push({ beat: b, durBeats, el });
+              el.classList.add("pe-note-click");
+              el.addEventListener("click", () => {
+                const sec = engine.section;
+                const target = sec
+                  && beats.find((b) => b >= sec.start - 1e-6 && b < sec.end - 1e-6);
+                seekToBeat(target !== undefined && target !== false
+                  ? target : beats[0]);
+              });
+            }
+          }
         }
       }
-      it.moveToNext();
     }
-    osmd.cursor.reset();
-    osmd.cursor.hide();
+    if (osmd.cursor) { osmd.cursor.reset(); osmd.cursor.hide(); }
     map.sort((a, b) => a.beat - b.beat);
     engine.noteMap = map;
-    console.log(`[sheet] note map: ${map.length} notes`);
+    console.log(`[sheet] note map: ${map.length} entries`);
   }
 
   // SECTION SHADE (v1.5): a light gray band behind the bars of the active
@@ -647,13 +852,18 @@
     if (!sec || sec.label === "Full" || !engine.score) return;
     try {
       const u = 10 * (osmd.zoom || 1);
-      const src = osmd.Sheet.SourceMeasures;
       const gms = osmd.GraphicSheet.MeasureList;
+      // v1.7: the audio timeline expands repeats, so section start/end are
+      // PLAYED beats. A notated measure is inside the section if ANY of its
+      // play passes falls in the window.
+      const inSection = new Set();
+      for (const p of engine.score.playInstances || []) {
+        if (p.startBeat >= sec.start - 1e-3 && p.startBeat < sec.end - 1e-3)
+          inSection.add(p.measureIdx);
+      }
       const frag = document.createDocumentFragment();
-      for (let i = 0; i < src.length && i < gms.length; i++) {
-        const startBeat = src[i].AbsoluteTimestamp.RealValue * 4;
-        if (startBeat < sec.start - 1e-3 || startBeat >= sec.end - 1e-3)
-          continue;
+      for (let i = 0; i < gms.length; i++) {
+        if (!inSection.has(i)) continue;
         for (const gm of gms[i] || []) {     // one entry per staff (we have 1)
           if (!gm || !gm.PositionAndShape) continue;
           // Hidden instruments (v1.6 duet-staff fix) still appear in the
