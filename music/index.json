@@ -165,12 +165,12 @@
   "status": "playable"
  },
  {
-  "file": "angeline-the-baker.musicxml",
-  "title": "Angeline The Baker - Beginner Fiddle Lesson",
+  "file": "angeline-the-baker-beginner-a-major.musicxml",
+  "title": "Angeline The Baker - Beginner Fiddle Lesson (A)",
   "slug": "angeline-the-baker",
   "lesson_id": "3.09",
   "module": 3,
-  "key": "D",
+  "key": "A",
   "timeSignature": "4/4",
   "tempo": null,
   "hasChords": true,

@@ -712,3 +712,19 @@ Verified headless (jsdom + real OSMD 1.9.0): 68/68 parse, note-map entries exact
 **First direct XML file edits (Jason asked if I could — yes).** Bug class: pickup measure replayed inside repeats because the export omitted the forward-repeat barline on bar 1 (Jason heard it on Ballydesmond lower). Library scan found 4 files: **ballydesmond-polka-lower-octave, wildwood-flower, angeline-the-baker, peacock-rag**. Fix: inserted `<barline location="left"><bar-style>heavy-light</bar-style><repeat direction="forward"/></barline>` into the first full measure (copied verbatim from ballydesmond-UPPER, which had it right). String-surgery insert — files otherwise byte-identical. Verified: 68/68 expand, all 4 now play the pickup exactly once, headless OSMD render green (ballydesmond 128/128, twinkle 42/42 note-map match, zero fingerings in output).
 
 Jason is compiling a list of per-tune notation fixes → next session(s). Reminder for him: hard-refresh and confirm the **v1.8** badge (his Twinkle screenshot was still rendering v1.6).
+
+### 2026-07-15 (cont.) — v1.9: retest fixes + fetch cache-buster + Jocelyn proofread brief (on disk, NOT pushed)
+
+Jason's v1.8 retest, three items:
+
+**1. "Ballydesmond still missing the forward repeat" — it wasn't.** The XML on disk was correct; Safari's fetch() cache served the OLD tune file (hard-refresh renews the page + JS but not necessarily fetch()-loaded XMLs). Permanent fix: **cache-buster** — `?v=<APP_VERSION>` stamped on index.json + every tune fetch, so each release pulls fresh data. Also stamped the `<script src>` in playalong.html (bump that `?v=` together with APP_VERSION).
+
+**2. Peacock Rag double repeat — my 7/15 fix was wrong for this file.** It already HAD a forward repeat at the very start (before the ¾-bar pickup — that bar is part of the form). My added barline at bar 2 made a visible double. Removed mine; original structure restored per Jason. Lesson for the pickup-repeat bug class: only files with NO existing forward repeat needed the fix (ballydesmond-lower + wildwood-flower: correct; angeline: moot, see below).
+
+**3. Angeline the Baker (3.09) was the wrong version.** Jason supplied `angeline-the-baker-beginner-a-major.musicxml` (16 bars AABB, key of A, clean) and renamed the old file to `angeline-the-baker-low-variation.musicxml` (kept in folder, NOT indexed). Index 3.09 now → beginner file, title "(A)", key A. **Gotcha: the new file has NO chord symbols → organ layer silent** (`hasChords: false`); flagged in the proofread brief as known.
+
+**Proofread handoff:** `PROOFREAD_BRIEF.md` created in the repo root — instructions for Jocelyn (what to look at, what to listen for, known issues to skip) + a 68-row per-tune checklist in course order. Claude batches the per-tune XML fixes from her notes when they come back.
+
+### 2026-07-15 (cont.) — v1.10: Angeline chords in (data-only + version bump for the cache-buster)
+
+Jason supplied the Angeline chord chart (Strum Machine, key of A): both parts are the same 8 bars — A / A / A / D / A / A / A+D(beat 3) / A. Wrote 10 `<harmony>` elements into `angeline-the-baker-beginner-a-major.musicxml` via lxml (changes only + part-start anchors; mid-bar D lands on the beat-3 A4 in bars 7/15). `hasChords: true` restored in index. Verified through the real parser with repeat expansion: 20 chord events over 32 played bars, timeline matches the chart on every pass. APP_VERSION → **1.10** (data changed; the fetch cache-buster keys off the version, so a bump is REQUIRED for any XML/index edit to reach browsers — remember this for future data-only fixes). PROOFREAD_BRIEF.md updated (Angeline no-chords known-issue removed; brief re-reviewed, checklist rows already carried the new title/key — still 68 tunes, still valid).

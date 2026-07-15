@@ -18,7 +18,13 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.8";
+  const APP_VERSION = "1.10";
+  // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
+  // Safari caches independently of the page — a hard-refresh renews the app
+  // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
+  // Ballydesmond XML on disk, browser showed the old one). Version-stamping
+  // the URLs makes every app version fetch fresh copies.
+  const bust = (url) => url + "?v=" + APP_VERSION;
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -1028,7 +1034,7 @@
     engine.activeEls = [];
     setStatus("Loading tune…");
     try {
-      const xml = await (await fetch("music/" + rec.file)).text();
+      const xml = await (await fetch(bust("music/" + rec.file))).text();
       if (token !== loadToken) return;   // a newer load superseded this one
       engine.score = parseMusicXML(xml);
       engine.current = rec;
@@ -1166,7 +1172,7 @@
 
     try {
       setStatus("Loading tune library…");
-      const idx = await (await fetch(INDEX_FILE)).json();
+      const idx = await (await fetch(bust(INDEX_FILE))).json();
       engine.tunes = idx.slice().sort(byCourseOrder);
       buildSelector("");
 
