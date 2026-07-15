@@ -208,6 +208,10 @@ Learning version</credit-words>
   </measure>
   <!--============== Part: P1, Measure: 2 ==============-->
   <measure number="2" width="171">
+   <barline location="left">
+    <bar-style>heavy-light</bar-style>
+    <repeat direction="forward" />
+   </barline>
    <harmony color="#000000" default-y="30">
     <root>
      <root-step>D</root-step>

@@ -160,6 +160,10 @@ lower octave</credit-words>
   </measure>
   <!--============== Part: P1, Measure: 1 ==============-->
   <measure number="1" width="180">
+   <barline location="left">
+    <bar-style>heavy-light</bar-style>
+    <repeat direction="forward" />
+   </barline>
    <harmony color="#000000" default-y="30">
     <root>
      <root-step>A</root-step>

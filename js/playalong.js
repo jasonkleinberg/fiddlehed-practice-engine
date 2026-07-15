@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.7";
+  const APP_VERSION = "1.8";
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -658,8 +658,7 @@
           drawComposer: false,
           drawLyricist: false,
           drawPartNames: false,
-          drawFingerings: true,
-          fingeringPosition: "above",   // fiddle-tab fingerings sit over notes
+          drawFingerings: false,   // v1.8: clean score — no fingerings/tab
           drawingParameters: "compacttight",
         });
     } catch (err) {
@@ -668,15 +667,16 @@
     }
   }
 
-  // DISPLAY PREPROCESS (v1.7). Some Sibelius exports (the Ballydesmond
-  // Polkas) wrote fiddle-tab fingerings ("2", "A0", "G1"…) as free-floating
-  // <words> DIRECTIONS instead of per-note fingerings. OSMD stacks each
-  // words-direction higher to dodge the previous one → the fingering
-  // staircase climbing off the page. Fix: convert each to a proper
-  // <fingering> on the note that follows it, so OSMD anchors it to the
-  // notehead. Also drops the "Arranged for awesome fiddle students…" blurb
-  // those exports left floating mid-score. Display-only — the audio parser
-  // never read <words>.
+  // DISPLAY PREPROCESS (v1.8). Some Sibelius exports wrote fiddle-tab
+  // fingerings ("2", "A0", "G1"…) as free-floating <words> DIRECTIONS;
+  // OSMD stacks each one higher to dodge the previous → the fingering
+  // staircase climbing off the page. v1.7 converted them to per-note
+  // fingerings; v1.8 (Jason's call) REMOVES them entirely — the play-along
+  // doubles as sheet-music reading practice, and fingering/tab views live
+  // on the lesson pages instead. Also drops the "Arranged for awesome
+  // fiddle students by FiddleHed" blurb those exports left floating
+  // mid-score. Display-only — the source XMLs keep their fingerings for
+  // lesson-page use, and the audio parser never read <words>.
   // One fingering token: optional string letter, optional Low/High mark,
   // finger number — covers "2", "A0", "G1", "L2", "H3", "AL1". Some exports
   // cram several tokens in one words element separated by tab runs
@@ -686,50 +686,24 @@
     const toks = text.split(/\s+/).filter(Boolean);
     return toks.length > 0 && toks.every((t) => FINGERING_TOKEN.test(t));
   };
+  const CREDIT_BLURB = /arranged for|fiddle students|by fiddlehed/i;
   function preprocessForDisplay(xmlText) {
     try {
       const doc = new DOMParser().parseFromString(xmlText, "application/xml");
       if (doc.querySelector("parsererror")) return xmlText;
       let changed = false;
       for (const dir of [...doc.querySelectorAll("part direction")]) {
-        const words = dir.querySelector("direction-type > words");
-        if (!words) continue;
-        const text = (words.textContent || "").trim();
-        if (/arranged for/i.test(text)) {
-          dir.remove(); changed = true;
-          continue;
+        const words = [...dir.querySelectorAll("direction-type > words")];
+        if (!words.length) continue;
+        const text = words.map((w) => w.textContent || "").join(" ").trim();
+        if (isFingeringText(text) || CREDIT_BLURB.test(text)) {
+          dir.remove();
+          changed = true;
         }
-        if (!isFingeringText(text)) continue;
-        // Find the next <note> (same measure, else the following measures).
-        let note = null;
-        let el = dir.nextElementSibling, meas = dir.parentElement;
-        while (!note && meas) {
-          while (el) {
-            if (el.tagName === "note") { note = el; break; }
-            el = el.nextElementSibling;
-          }
-          if (!note) {
-            meas = meas.nextElementSibling;
-            el = meas ? meas.firstElementChild : null;
-          }
-        }
-        if (note) {
-          let notations = note.querySelector(":scope > notations");
-          if (!notations) {
-            notations = doc.createElement("notations");
-            note.appendChild(notations);
-          }
-          let technical = notations.querySelector(":scope > technical");
-          if (!technical) {
-            technical = doc.createElement("technical");
-            notations.appendChild(technical);
-          }
-          const f = doc.createElement("fingering");
-          f.setAttribute("placement", "above");
-          f.textContent = text.split(/\s+/).filter(Boolean).join(" ");
-          technical.appendChild(f);
-        }
-        dir.remove();   // even unanchored, a stray words-direction must go
+      }
+      // Native per-note fingerings too, if any export has them.
+      for (const f of [...doc.querySelectorAll("technical > fingering")]) {
+        f.remove();
         changed = true;
       }
       if (!changed) return xmlText;
