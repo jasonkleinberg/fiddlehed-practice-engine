@@ -55,6 +55,20 @@
     .score-wrap .score-hint {
       color: #999; font-size: 0.8rem; margin: 0.25rem 0 0;
     }
+    /* Hide-sheet-music toggle (memorization practice, v1.12) */
+    .score-toggle {
+      padding: 0.3rem 0.7rem; font-size: 0.9rem;
+      border: 1px solid #ccc; border-radius: 4px; background: #fff;
+      margin-bottom: 0.25rem;
+    }
+    .score-toggle.active { background: #990034; border-color: #990034; color: #fff; }
+    .score-wrap.score-hidden #score,
+    .score-wrap.score-hidden .score-hint { display: none; }
+    .score-wrap.score-hidden .memorize-hint { display: block; }
+    .memorize-hint {
+      display: none; color: #999; font-size: 0.9rem;
+      font-style: italic; margin: 0.5rem 0 0.25rem;
+    }
     #score { min-height: 120px; }
     #score svg { display: block; }
     /* Notes are clickable (click-to-seek) */
@@ -96,7 +110,9 @@
     <input type="range" id="tempo" min="40" max="200" value="80" step="1" />
   </div>
 
-  <div class="score-wrap">
+  <div class="score-wrap" id="score-wrap">
+    <button class="score-toggle" id="score-toggle" type="button" aria-pressed="false">Hide sheet music</button>
+    <p class="memorize-hint">Playing from memory. You've got this.</p>
     <div id="score" aria-label="Sheet music"></div>
     <p class="score-hint">Click any note to jump there. The red note is what's playing.</p>
   </div>
@@ -127,6 +143,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.10"></script>
+  <script src="js/playalong.js?v=1.12"></script>
 </body>
 </html>

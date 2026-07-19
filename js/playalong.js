@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.10";
+  const APP_VERSION = "1.12";
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -57,6 +57,8 @@
     orgOut: $("organ-volume-readout"),
     kickVol: $("kick-volume"),
     kickOut: $("kick-volume-readout"),
+    scoreWrap: $("score-wrap"),
+    scoreToggle: $("score-toggle"),
   };
 
   function setStatus(msg) { els.status.textContent = msg; }
@@ -123,9 +125,26 @@
       }
     }
 
+    // Alongside the flat playback order, record SECTION structure (v1.11):
+    // each closed repeat region = one musical part (A, B, …), with the
+    // playback position where each pass begins and whether it has voltas.
+    // buildSections() uses this so loop buttons align with the real parts
+    // (halving the played timeline breaks when parts repeat unevenly —
+    // Britches: A repeats, B doesn't).
     const order = [];
+    const sections = [];
     const cap = measures.length * 8 + 16;  // runaway guard
     let i = 0, repeatStart = 0, pass = 1, inEnding = false;
+    let secStart = 0, passStarts = [0], hasVolta = false;
+    const closeSection = () => {
+      if (order.length > secStart) {
+        sections.push({ startOrder: secStart, endOrder: order.length,
+                        passStarts, hasVolta });
+      }
+      secStart = order.length;
+      passStarts = [order.length];
+      hasVolta = false;
+    };
     while (i < measures.length && order.length < cap) {
       const m = info[i];
       if (m.fwd) repeatStart = i;
@@ -143,23 +162,26 @@
         i = j;
         continue;
       }
-      if (m.endingNums) inEnding = true;
+      if (m.endingNums) { inEnding = true; hasVolta = true; }
       order.push(i);
       if (m.back && pass < m.times) {
         pass++;
         inEnding = false;
         i = repeatStart;                    // take the repeat
+        passStarts.push(order.length);      // next measure starts a new pass
       } else {
         if (m.back || (m.endingStops && inEnding)) {
           // Passed the final ending / final repeat — section is closed.
           pass = 1;
           repeatStart = i + 1;
           inEnding = false;
+          closeSection();
         }
         i++;
       }
     }
-    return order;
+    closeSection();                          // trailing unrepeated measures
+    return { order, sections };
   }
 
   function parseMusicXML(xmlText) {
@@ -168,7 +190,7 @@
 
     const part = doc.querySelector("part");
     const measures = [...part.querySelectorAll("measure")];
-    const playOrder = expandRepeats(measures);
+    const { order: playOrder, sections: playSections } = expandRepeats(measures);
 
     let divisions = null;       // ticks per quarter note (locked at first read)
     let beatsPerBar = 4, beatType = 4;
@@ -321,6 +343,17 @@
         measureIdx: p.measureIdx,
         startBeat: p.startTick / tpb,
       })),
+      // Musical parts (closed repeat regions) in PLAYED beats.
+      parts: playSections.map((sec) => {
+        const beatAt = (o) => o < playInstances.length
+          ? playInstances[o].startTick / tpb : cursor / tpb;
+        return {
+          start: beatAt(sec.startOrder),
+          end: beatAt(sec.endOrder),
+          passStartBeats: sec.passStarts.map(beatAt),
+          hasVolta: sec.hasVolta,
+        };
+      }),
       notes: notes.map((n) => ({
         beat: n.tick / tpb,
         durBeats: n.durTick / tpb,
@@ -395,6 +428,8 @@
     scoreXml: null,   // raw MusicXML of the loaded tune (for resize re-render)
     noteMap: [],      // [{ beat, durBeats, el }] sorted by beat — beat→SVG map
     activeEls: [],    // SVG <g> elements currently painted red
+    scoreHidden: false, // v1.12 memorization toggle: sheet music hidden
+    scoreDirty: false,  // tune changed (or resized) while hidden → re-render on show
   };
 
   function buildInstruments() {
@@ -584,28 +619,65 @@
     const s = engine.score;
     const barBeats = s.beatsPerBar * (4 / s.beatType);
     const bodyStart = s.bodyStartBeats;
-    const nBars = Math.round((s.totalBeats - bodyStart) / barBeats);
     const secs = [{ label: "Full", start: s.loopStartBeats, end: s.loopBeats }];
-    const add = (label, fromBar, barCount) => secs.push({
-      label,
-      start: bodyStart + fromBar * barBeats,
-      end: bodyStart + (fromBar + barCount) * barBeats,
-    });
-    // A/B = the tune's two parts (halves of the body). Each part then splits
-    // into QUARTERS (A1–A4, usually 2 bars each on an 8-bar part) when its
-    // bar count divides by 4, else halves (A1–A2), else no subdivisions.
-    // (C parts would need per-tune metadata — MusicXML has no part markers.)
-    if (nBars >= 4 && nBars % 2 === 0) {
-      const partBars = nBars / 2;
-      const parts = [["A", 0], ["B", partBars]];
-      for (const [p, off] of parts) add(p, off, partBars);
-      const div = partBars % 4 === 0 ? 4 : partBars % 2 === 0 ? 2 : 0;
-      if (div) {
-        const q = partBars / div;
-        for (const [p, off] of parts)
-          for (let i = 0; i < div; i++) add(p + (i + 1), off + i * q, q);
+
+    // Subdivide one part span into quarters (or halves) of ~2-bar chunks.
+    const subdivide = (label, start, end) => {
+      const nBars = Math.round((end - start) / barBeats);
+      const div = nBars % 4 === 0 ? 4 : nBars % 2 === 0 ? 2 : 0;
+      if (!div || nBars < 4) return;
+      const q = nBars / div;
+      for (let i = 0; i < div; i++) {
+        secs.push({
+          label: label + (i + 1),
+          start: start + i * q * barBeats,
+          end: start + (i + 1) * q * barBeats,
+        });
+      }
+    };
+
+    // v1.11: parts come from the tune's REPEAT STRUCTURE (each closed repeat
+    // region = one part), not from halving the played timeline — halving
+    // breaks when parts repeat unevenly (Britches: A repeats, B doesn't →
+    // "A" used to grab a part-and-a-half and quarters came out 3 bars).
+    // Span choice per part:
+    //   - no voltas: passes are identical, so use ONE pass (looping A once
+    //     sounds the same as looping A-A, and chunks stay 2 bars);
+    //   - with voltas: use the FULL span so 1st AND 2nd endings are covered
+    //     (this is what makes e.g. Cripple Creek A4 = bar 3 + 2nd ending).
+    const parts = (s.parts || []).filter((p) => p.end - p.start > 1e-6);
+    if (parts.length >= 2 && parts.length <= 6) {
+      const names = ["A", "B", "C", "D", "E", "F"];
+      let n = 0;
+      for (const p of parts) {
+        const start = Math.max(p.start, bodyStart);   // pickup only in Full
+        const end = (!p.hasVolta && p.passStartBeats.length > 1)
+          ? p.passStartBeats[1] : p.end;
+        // Skip stub "parts" (< 2 bars — usually a written-out ending bar
+        // trailing a repeat); they'd steal letters and make useless loops.
+        if (end - start < 2 * barBeats - 1e-6 || n >= names.length) continue;
+        secs.push({ label: names[n], start, end });
+        subdivide(names[n], start, end);
+        n++;
+      }
+    } else {
+      // Fallback (no/one repeat region): halve the body as before.
+      const nBars = Math.round((s.totalBeats - bodyStart) / barBeats);
+      if (nBars >= 4 && nBars % 2 === 0) {
+        const partBars = nBars / 2;
+        for (const [name, off] of [["A", 0], ["B", partBars]]) {
+          const start = bodyStart + off * barBeats;
+          const end = start + partBars * barBeats;
+          secs.push({ label: name, start, end });
+          subdivide(name, start, end);
+        }
       }
     }
+    // Order: parts first, then their subdivisions (A B A1..A4 B1..B4 reads
+    // better than interleaved when parts differ in length).
+    const rank = (l) => l === "Full" ? 0 : l.length === 1 ? 1 : 2;
+    secs.sort((a, b) => rank(a.label) - rank(b.label)
+      || a.label.localeCompare(b.label));
     return secs;
   }
 
@@ -729,6 +801,13 @@
     if (!engine.osmd) return;
     engine.noteMap = [];
     engine.activeEls = [];
+    // Sheet music hidden (memorization mode): OSMD can't measure a
+    // display:none container, so stash the XML and render on reveal.
+    if (engine.scoreHidden) {
+      engine.scoreXml = preprocessForDisplay(xmlText);
+      engine.scoreDirty = true;
+      return;
+    }
     try {
       xmlText = preprocessForDisplay(xmlText);
       engine.scoreXml = xmlText;
@@ -964,6 +1043,7 @@
   function wireScoreResize() {
     window.addEventListener("resize", () => {
       if (!engine.osmd || !engine.scoreXml) return;
+      if (engine.scoreHidden) { engine.scoreDirty = true; return; }
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         try {
@@ -973,6 +1053,24 @@
           updateHighlight(true);
         } catch (err) { console.error("[sheet] resize re-render failed:", err); }
       }, 300);
+    });
+  }
+
+  // v1.12: hide/show sheet music — memorization practice. Hiding is pure CSS;
+  // if the tune changed (or window resized) while hidden, re-render on reveal.
+  function wireScoreToggle() {
+    if (!els.scoreToggle || !els.scoreWrap) return;
+    els.scoreToggle.addEventListener("click", async () => {
+      engine.scoreHidden = !engine.scoreHidden;
+      els.scoreWrap.classList.toggle("score-hidden", engine.scoreHidden);
+      els.scoreToggle.classList.toggle("active", engine.scoreHidden);
+      els.scoreToggle.textContent =
+        engine.scoreHidden ? "Show sheet music" : "Hide sheet music";
+      els.scoreToggle.setAttribute("aria-pressed", String(engine.scoreHidden));
+      if (!engine.scoreHidden && engine.scoreDirty) {
+        engine.scoreDirty = false;
+        if (engine.scoreXml) await renderScore(engine.scoreXml);
+      }
     });
   }
 
@@ -1168,6 +1266,7 @@
 
     buildOsmd();          // sheet-music renderer (no-op if the CDN failed)
     wireScoreResize();
+    wireScoreToggle();
     startPaintLoop();
 
     try {

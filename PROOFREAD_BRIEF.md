@@ -1,10 +1,12 @@
 # Practice Engine — Tune Proofread Brief (for Jocelyn)
 
-*Created 2026-07-15 · Owner: Jason · App: playalong.html (check the version badge — should be v1.9 or higher)*
+*Created 2026-07-15 · Owner: Jason · App: playalong.html (check the version badge — should be v1.11 or higher)*
+
+**Log your notes here → [Practice Tracker (Google Sheet)](https://docs.google.com/spreadsheets/d/1TwbxptFSy9YTd2Fa_rYPtJulp5aB4-k5DkYKnW1UI_M/edit?gid=331268741#gid=331268741)** — easier than editing this file. The checklist below is the same tune list for reference.
 
 ## The job
 
-Go through every tune in the play-along app and note anything that seems off. You don't need to fix anything — just look, listen, and log. One row per tune in the checklist below; leave the Notes cell blank if the tune is clean.
+Go through every tune in the play-along app and note anything that seems off. You don't need to fix anything — just look, listen, and log. One row per tune; leave the Notes cell blank if the tune is clean.
 
 **Time estimate:** ~2–3 min per tune × 68 tunes ≈ 2.5–3 hrs. Fine to split across days — mark the ✓ column as you go.
 
@@ -23,7 +25,11 @@ Go through every tune in the play-along app and note anything that seems off. Yo
    - First/second endings play correctly (1st ending, jump back, 2nd ending)?
    - Chords (organ layer): do the changes sound right? Any tune where the organ is silent?
    - Anything else that sounds wrong: wrong notes vs how we teach it, weird rhythm, notes cut short, tempo way off
-4. Write ONE short note per problem in the checklist ("bar 5 sounds wrong", "no repeat in B part", "this is the D version, lesson teaches A"). Screenshots welcome for visual weirdness.
+4. **Check the Loop buttons** (Full / A / B / A1–A4 …):
+   - Do A and B actually match the tune's parts? (Click A — does it loop the A part and nothing else?)
+   - Are the numbered chunks (A1, A2…) sensible sizes — usually 2 bars each?
+   - Some tunes legitimately have quirky buttons (odd-length parts get no numbered chunks; a few tunes have a C part) — flag anything that feels WRONG when you play it, not just unusual.
+5. Write ONE short note per problem in the checklist ("bar 5 sounds wrong", "no repeat in B part", "this is the D version, lesson teaches A"). Screenshots welcome for visual weirdness.
 
 ## Known issues — don't log these, already handled/flagged
 
