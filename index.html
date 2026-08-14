@@ -2,93 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FiddleHed Practice Engine — MVP</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>FiddleHed Practice Engine</title>
+  <!--
+    This page used to be the April 2026 MVP player (dropdown + js/player.js).
+    It was retired on 2026-08-14 and replaced with this redirect, because a bare
+    folder URL silently served the old app and broke the WordPress embed.
+
+    The old MVP is still in git history: `git show 4d7b733:index.html`
+    and `git show 4d7b733:js/player.js`.
+
+    The real player is playalong.html. Do not put an app back here.
+  -->
+  <link rel="canonical" href="playalong.html" />
+  <script>
+    // Forward to the real player, carrying ?tune=<slug> and any other params.
+    // replace() so the dead URL doesn't clutter the back button.
+    location.replace("playalong.html" + location.search + location.hash);
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0; url=playalong.html" />
+  </noscript>
   <style>
     body {
       font-family: Georgia, serif;
-      max-width: 640px;
-      margin: 2rem auto;
+      max-width: 480px;
+      margin: 4rem auto;
       padding: 0 1rem;
       line-height: 1.5;
-    }
-    h1 { margin-bottom: 0.25rem; }
-    .tune-title {
-      color: #555;
-      font-style: italic;
-      margin-top: 0;
-    }
-    .controls {
-      margin: 1.5rem 0;
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    button:disabled { cursor: not-allowed; opacity: 0.5; }
-    .tune-selector {
-      margin: 1rem 0 0.5rem;
-    }
-    .tune-selector label {
-      margin-right: 0.5rem;
-    }
-    .tune-selector select {
-      font-size: 1rem;
-    }
-    .tempo, .metronome {
-      margin: 1rem 0;
-    }
-    .tempo label, .metronome label {
-      display: block;
-      margin-bottom: 0.25rem;
-    }
-    .tempo input[type="range"], .metronome input[type="range"] {
-      width: 100%;
-    }
-    .status {
-      margin-top: 1rem;
-      color: #666;
-      font-size: 0.9rem;
-      min-height: 1.2em;
+      color: #333;
     }
   </style>
 </head>
 <body>
-  <h1>FiddleHed Practice Engine</h1>
-
-  <div class="tune-selector">
-    <label for="tune-select">Tune:</label>
-    <select id="tune-select" disabled></select>
-  </div>
-
-  <p class="tune-title" id="tune-title">Loading tune…</p>
-
-  <div class="controls">
-    <button id="play" disabled>Play</button>
-    <button id="pause" disabled>Pause</button>
-    <button id="stop" disabled>Stop</button>
-  </div>
-
-  <div class="tempo">
-    <label for="tempo">Tempo: <span id="tempo-readout">80 BPM</span></label>
-    <input type="range" id="tempo" min="40" max="200" value="80" step="1" />
-  </div>
-
-  <div class="metronome">
-    <label for="metronome-volume">Metronome: <span id="metronome-volume-readout">25%</span></label>
-    <input type="range" id="metronome-volume" min="0" max="100" value="25" step="1" />
-  </div>
-
-  <p class="status" id="status">Initializing AlphaTab…</p>
-
-  <!-- Hidden container for AlphaTab (required, even though we're not rendering sheet music) -->
-  <div id="alphatab-container" style="display: none;"></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@coderline/alphatab@1.4.3/dist/alphaTab.min.js"></script>
-  <script src="js/player.js"></script>
+  <p>Taking you to the FiddleHed Practice Engine…</p>
+  <p><a href="playalong.html">Continue to the player &rarr;</a></p>
 </body>
 </html>
