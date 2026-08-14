@@ -1,5 +1,6 @@
 .DS_Store
 .playwright-mcp/
+.claude/settings.local.json
 Practice Engine - Sibelius for Export/
 Practice Engine - Already XML/
 Practice Engine - XML output/
