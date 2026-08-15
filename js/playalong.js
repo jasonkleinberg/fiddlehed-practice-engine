@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.13"; // FiddleHed brand skin (Poster) — reskin only, no behavior changes
+  const APP_VERSION = "1.14"; // simpler tune title: name + key only (no lesson ID / note-chord counts)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -1137,9 +1137,10 @@
       engine.score = parseMusicXML(xml);
       engine.current = rec;
 
-      els.title.textContent =
-        `${tuneLabel(rec)} — ${engine.score.notes.length} notes, `
-        + `${engine.score.chords.length} chords`;
+      // Display title: just tune + key. Lesson IDs stay in the dropdown;
+      // note/chord counts were debug info, retired in v1.14.
+      // Key stays visible because transposition is a likely future feature.
+      els.title.textContent = `${rec.title} (${rec.key})`;
       if (rec.videoLessonUrl) {
         els.lessonLink.href = rec.videoLessonUrl;
         els.lessonLink.style.display = "";
