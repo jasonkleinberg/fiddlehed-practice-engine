@@ -183,11 +183,16 @@
       margin-top: 1.5rem;
       background: var(--fh-paper);
     }
-    .layers h2 {
-      font-family: 'Obsolete', Georgia, serif; font-weight: normal;
-      font-size: 1rem; margin: 0.75rem 0 0; color: var(--fh-red);
-      letter-spacing: 1px;
+    /* One line per layer: track name left, volume % right (v1.15) */
+    .layers .slider label {
+      display: flex; justify-content: space-between; align-items: baseline;
+      text-transform: none; letter-spacing: 0;
     }
+    .layers .track-name {
+      font-family: 'Obsolete', Georgia, serif; font-weight: normal;
+      font-size: 1rem; color: var(--fh-red); letter-spacing: 1px;
+    }
+    .layers .slider label span:last-child { color: var(--fh-red); font-weight: 700; }
 
     .status { margin-top: 1rem; color: var(--fh-gray); font-size: 0.9rem; font-style: italic; min-height: 1.2em; }
     .hint { color: #a89f8d; font-size: 0.8rem; }
@@ -299,21 +304,18 @@
       </div>
 
       <div class="layers">
-        <h2>Melody (violin)</h2>
         <div class="slider">
-          <label for="melody-volume">Volume: <span id="melody-volume-readout">30%</span></label>
+          <label for="melody-volume"><span class="track-name">Melody (violin)</span><span id="melody-volume-readout">30%</span></label>
           <input type="range" id="melody-volume" min="0" max="100" value="30" step="1" />
         </div>
 
-        <h2>Organ (chords)</h2>
         <div class="slider">
-          <label for="organ-volume">Volume: <span id="organ-volume-readout">30%</span></label>
+          <label for="organ-volume"><span class="track-name">Organ (chords)</span><span id="organ-volume-readout">30%</span></label>
           <input type="range" id="organ-volume" min="0" max="100" value="30" step="1" />
         </div>
 
-        <h2>Kick (beat)</h2>
         <div class="slider">
-          <label for="kick-volume">Volume: <span id="kick-volume-readout">100%</span></label>
+          <label for="kick-volume"><span class="track-name">Kick (beat)</span><span id="kick-volume-readout">100%</span></label>
           <input type="range" id="kick-volume" min="0" max="100" value="100" step="1" />
         </div>
       </div>
@@ -328,6 +330,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.14"></script>
+  <script src="js/playalong.js?v=1.15"></script>
 </body>
 </html>
