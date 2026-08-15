@@ -2,71 +2,225 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>FiddleHed Practice Engine — 3-Layer Play-Along (prototype)</title>
+  <title>FiddleHed Practice Engine — 3-Layer Play-Along</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    /* ==========================================================
+       Practice Engine — FiddleHed brand skin ("Poster" direction)
+       Obsolete headings + Karla body · red #990034 on cream #FBF6EC
+       Sibling of the MetroDrone skin (metrodrone/index.html).
+       Style source: fiddlehed-content/Knowledge/brand-style.md
+       Reskin only (v1.13): no control/behavior changes.
+       ========================================================== */
+    @import url('https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,700;1,400&display=swap');
+
+    @font-face {
+      font-family: 'Obsolete';
+      src: url('Obsolete.woff2') format('woff2'),
+           url('Obsolete.woff') format('woff');
+      font-display: swap;
+    }
+
+    :root {
+      --fh-red: #990034;
+      --fh-red-dark: #7a0029;
+      --fh-cream: #FBF6EC;
+      --fh-ink: #1d1a16;
+      --fh-gray: #666666;
+      --fh-line: #d8cfbe;
+      --fh-pink: #e8b7c6;
+      --fh-paper: #fffdf7;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: Georgia, serif;
-      max-width: 960px;   /* widened for the sheet-music view (was 640px) */
+      font-family: 'Karla', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #efe7d8;
+      color: var(--fh-gray);
+      max-width: 960px;
       margin: 2rem auto;
       padding: 0 1rem;
       line-height: 1.5;
     }
-    h1 { margin-bottom: 0.25rem; }
-    .tune-title { color: #555; font-style: italic; margin-top: 0; }
-    .controls {
-      margin: 1.5rem 0;
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
+
+    .card {
+      background: var(--fh-cream);
+      border-radius: 8px;
+      box-shadow: 0 8px 26px rgba(29, 26, 22, 0.18);
+      overflow: hidden;
     }
-    button { padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; }
-    button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+    /* ---- Masthead ---- */
+    .band {
+      background: var(--fh-red);
+      padding: 20px 28px 16px;
+      text-align: center;
+    }
+
+    .band h1 {
+      font-family: 'Obsolete', Georgia, serif;
+      font-weight: normal;
+      color: var(--fh-cream);
+      font-size: 2.5rem;
+      line-height: 1;
+      margin: 0;
+    }
+
+    .band-tag {
+      color: var(--fh-pink);
+      font-size: 0.72rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 7px;
+    }
+
+    .app-body { padding: 20px 28px 0; }
+
+    .tune-title {
+      font-family: 'Obsolete', Georgia, serif;
+      color: var(--fh-red);
+      font-size: 1.5rem;
+      text-align: center;
+      margin: 0 0 2px;
+    }
+
+    .lesson-line { text-align: center; margin: 0 0 14px; min-height: 1.2em; }
+    .lesson-link { font-size: 0.9rem; color: var(--fh-red); }
+    a { color: var(--fh-red); }
+
+    /* ---- Tune picker ---- */
     .picker { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; }
-    .picker input[type="text"] { flex: 1 1 12rem; padding: 0.4rem 0.6rem; font-size: 0.95rem; }
-    .picker select { flex: 2 1 16rem; padding: 0.4rem; font-size: 0.95rem; max-width: 100%; }
-    .lesson-link { font-size: 0.9rem; }
+    .picker input[type="text"] {
+      flex: 1 1 12rem; padding: 0.5rem 0.7rem; font-size: 0.95rem;
+      font-family: 'Karla', sans-serif; color: var(--fh-ink);
+      border: 1.5px solid var(--fh-ink); border-radius: 6px; background: var(--fh-paper);
+    }
+    .picker select {
+      flex: 2 1 16rem; padding: 0.5rem; font-size: 0.95rem; max-width: 100%;
+      font-family: 'Karla', sans-serif; color: var(--fh-ink);
+      border: 1.5px solid var(--fh-ink); border-radius: 6px; background: var(--fh-paper);
+    }
+    .picker input[type="text"]:focus, .picker select:focus {
+      outline: none; border-color: var(--fh-red);
+      box-shadow: 0 0 0 2px rgba(153, 0, 52, 0.15);
+    }
+
+    /* ---- Transport ---- */
+    .controls { margin: 1.2rem 0; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .controls button {
+      flex: 1 1 6rem;
+      padding: 0.65rem 1rem; font-size: 1.1rem; cursor: pointer;
+      font-family: 'Obsolete', Georgia, serif; font-weight: normal;
+      text-transform: uppercase; letter-spacing: 3px;
+      border-radius: 6px; transition: all 0.15s ease;
+      background: transparent; color: var(--fh-ink);
+      border: 1.5px solid var(--fh-ink);
+    }
+    .controls button#play {
+      background: var(--fh-ink); color: var(--fh-cream);
+    }
+    .controls button#play:hover:not(:disabled) {
+      background: var(--fh-red); border-color: var(--fh-red);
+    }
+    .controls button:hover:not(:disabled) { color: var(--fh-red); border-color: var(--fh-red); }
+    .controls button#play:hover:not(:disabled) { color: var(--fh-cream); }
+    .controls button:active:not(:disabled) { transform: translateY(1px); }
+    button:disabled { cursor: not-allowed; opacity: 0.4; }
+
+    /* ---- Loop section buttons ---- */
     .sections { margin: 0.75rem 0; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
-    .sections .sections-label { font-size: 0.9rem; color: #666; margin-right: 0.25rem; }
-    .sections button { padding: 0.3rem 0.7rem; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
-    .sections button.active { background: #990034; border-color: #990034; color: #fff; }
+    .sections .sections-label {
+      font-size: 0.72rem; color: var(--fh-ink); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.5px; margin-right: 0.25rem;
+    }
+    .sections button {
+      padding: 0.3rem 0.7rem; font-size: 0.9rem; cursor: pointer;
+      font-family: 'Karla', sans-serif; font-weight: 700;
+      border: 1.5px solid var(--fh-ink); border-radius: 6px;
+      background: var(--fh-paper); color: var(--fh-ink);
+      transition: all 0.15s ease;
+    }
+    .sections button:hover { border-color: var(--fh-red); color: var(--fh-red); }
+    .sections button.active {
+      background: var(--fh-red); border-color: var(--fh-red); color: var(--fh-cream);
+    }
+
+    /* ---- Sliders ---- */
     .slider { margin: 1rem 0; }
-    .slider label { display: block; margin-bottom: 0.25rem; }
-    .slider input[type="range"] { width: 100%; }
+    .slider label {
+      display: block; margin-bottom: 0.25rem;
+      font-size: 0.72rem; font-weight: 700; color: var(--fh-ink);
+      text-transform: uppercase; letter-spacing: 1.5px;
+    }
+    .slider label span { color: var(--fh-red); }
+    input[type="range"] {
+      width: 100%; height: 4px; border-radius: 2px;
+      background: var(--fh-line); outline: none;
+      -webkit-appearance: none; appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--fh-red); border: 2px solid var(--fh-cream);
+      box-shadow: 0 1px 4px rgba(29, 26, 22, 0.35);
+      cursor: pointer; transition: transform 0.15s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+    input[type="range"]::-moz-range-thumb {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--fh-red); border: 2px solid var(--fh-cream);
+      box-shadow: 0 1px 4px rgba(29, 26, 22, 0.35);
+      cursor: pointer; transition: transform 0.15s ease;
+    }
+    input[type="range"]::-moz-range-thumb:hover { transform: scale(1.15); }
+
+    /* ---- Layer mixer ---- */
     .layers {
-      border: 1px solid #ddd;
+      border: 1px solid var(--fh-line);
       border-radius: 6px;
       padding: 0.5rem 1rem 1rem;
       margin-top: 1.5rem;
+      background: var(--fh-paper);
     }
-    .layers h2 { font-size: 1rem; margin: 0.75rem 0 0; color: #444; }
-    .status { margin-top: 1rem; color: #666; font-size: 0.9rem; min-height: 1.2em; }
-    .hint { color: #999; font-size: 0.8rem; }
+    .layers h2 {
+      font-family: 'Obsolete', Georgia, serif; font-weight: normal;
+      font-size: 1rem; margin: 0.75rem 0 0; color: var(--fh-red);
+      letter-spacing: 1px;
+    }
+
+    .status { margin-top: 1rem; color: var(--fh-gray); font-size: 0.9rem; font-style: italic; min-height: 1.2em; }
+    .hint { color: #a89f8d; font-size: 0.8rem; }
 
     /* ---- Sheet music (OSMD) ---- */
     .score-wrap {
-      border: 1px solid #ddd;
+      border: 1px solid var(--fh-line);
       border-radius: 6px;
       margin-top: 1.5rem;
       padding: 0.5rem 0.75rem 1rem;
-      background: #fff;
+      background: #fff;   /* notation stays on white for readability */
       overflow-x: auto;   /* narrow screens: score scrolls sideways, not the page */
     }
     .score-wrap .score-hint {
-      color: #999; font-size: 0.8rem; margin: 0.25rem 0 0;
+      color: #a89f8d; font-size: 0.8rem; margin: 0.25rem 0 0;
     }
     /* Hide-sheet-music toggle (memorization practice, v1.12) */
     .score-toggle {
-      padding: 0.3rem 0.7rem; font-size: 0.9rem;
-      border: 1px solid #ccc; border-radius: 4px; background: #fff;
-      margin-bottom: 0.25rem;
+      padding: 0.3rem 0.7rem; font-size: 0.9rem; cursor: pointer;
+      font-family: 'Karla', sans-serif; font-weight: 700;
+      border: 1.5px solid var(--fh-ink); border-radius: 6px;
+      background: var(--fh-paper); color: var(--fh-ink);
+      margin-bottom: 0.25rem; transition: all 0.15s ease;
     }
-    .score-toggle.active { background: #990034; border-color: #990034; color: #fff; }
+    .score-toggle:hover { border-color: var(--fh-red); color: var(--fh-red); }
+    .score-toggle.active {
+      background: var(--fh-red); border-color: var(--fh-red); color: var(--fh-cream);
+    }
     .score-wrap.score-hidden #score,
     .score-wrap.score-hidden .score-hint { display: none; }
     .score-wrap.score-hidden .memorize-hint { display: block; }
     .memorize-hint {
-      display: none; color: #999; font-size: 0.9rem;
+      display: none; color: var(--fh-gray); font-size: 0.9rem;
       font-style: italic; margin: 0.5rem 0 0.25rem;
     }
     #score { min-height: 120px; }
@@ -85,64 +239,95 @@
       opacity: 0.13;
       pointer-events: none;   /* clicks pass through to the notes */
     }
+
+    /* ---- Art footer ---- */
+    .art {
+      margin-top: 1.5rem;
+      border-top: 1px solid var(--fh-line);
+      text-align: center;
+      padding-top: 0.5rem;
+    }
+    .art img {
+      display: block;
+      width: min(420px, 80%);
+      height: auto;
+      margin: 0 auto;
+      mix-blend-mode: multiply;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 600px) {
+      .app-body { padding: 16px 20px 0; }
+      .band h1 { font-size: 2rem; }
+      .controls button { font-size: 1rem; padding: 0.55rem 0.8rem; }
+    }
   </style>
 </head>
 <body>
-  <h1>FiddleHed Practice Engine</h1>
-  <p class="tune-title" id="tune-title">Loading tune…</p>
-  <p><a class="lesson-link" id="lesson-link" href="#" target="_blank" rel="noopener" style="display:none">Watch the lesson →</a></p>
-
-  <div class="picker">
-    <input type="text" id="tune-search" placeholder="Search tunes…" aria-label="Search tunes" />
-    <select id="tune-select" aria-label="Choose a tune"></select>
-  </div>
-
-  <div class="controls">
-    <button id="play" disabled>Play</button>
-    <button id="pause" disabled>Pause</button>
-    <button id="stop" disabled>Stop</button>
-  </div>
-
-  <div class="sections" id="sections"></div>
-
-  <div class="slider tempo">
-    <label for="tempo">Tempo: <span id="tempo-readout">80 BPM</span></label>
-    <input type="range" id="tempo" min="40" max="200" value="80" step="1" />
-  </div>
-
-  <div class="score-wrap" id="score-wrap">
-    <button class="score-toggle" id="score-toggle" type="button" aria-pressed="false">Hide sheet music</button>
-    <p class="memorize-hint">Playing from memory. You've got this.</p>
-    <div id="score" aria-label="Sheet music"></div>
-    <p class="score-hint">Click any note to jump there. The red note is what's playing.</p>
-  </div>
-
-  <div class="layers">
-    <h2>Melody (violin)</h2>
-    <div class="slider">
-      <label for="melody-volume">Volume: <span id="melody-volume-readout">30%</span></label>
-      <input type="range" id="melody-volume" min="0" max="100" value="30" step="1" />
+  <div class="card">
+    <div class="band">
+      <h1>Practice Engine</h1>
+      <div class="band-tag">FiddleHed &middot; Practice Tools</div>
     </div>
+    <div class="app-body">
+      <p class="tune-title" id="tune-title">Loading tune&hellip;</p>
+      <p class="lesson-line"><a class="lesson-link" id="lesson-link" href="#" target="_blank" rel="noopener" style="display:none">Watch the lesson &rarr;</a></p>
 
-    <h2>Organ (chords)</h2>
-    <div class="slider">
-      <label for="organ-volume">Volume: <span id="organ-volume-readout">30%</span></label>
-      <input type="range" id="organ-volume" min="0" max="100" value="30" step="1" />
-    </div>
+      <div class="picker">
+        <input type="text" id="tune-search" placeholder="Search tunes…" aria-label="Search tunes" />
+        <select id="tune-select" aria-label="Choose a tune"></select>
+      </div>
 
-    <h2>Kick (beat)</h2>
-    <div class="slider">
-      <label for="kick-volume">Volume: <span id="kick-volume-readout">100%</span></label>
-      <input type="range" id="kick-volume" min="0" max="100" value="100" step="1" />
+      <div class="controls">
+        <button id="play" disabled>Play</button>
+        <button id="pause" disabled>Pause</button>
+        <button id="stop" disabled>Stop</button>
+      </div>
+
+      <div class="sections" id="sections"></div>
+
+      <div class="slider tempo">
+        <label for="tempo">Tempo: <span id="tempo-readout">80 BPM</span></label>
+        <input type="range" id="tempo" min="40" max="200" value="80" step="1" />
+      </div>
+
+      <div class="score-wrap" id="score-wrap">
+        <button class="score-toggle" id="score-toggle" type="button" aria-pressed="false">Hide sheet music</button>
+        <p class="memorize-hint">Playing from memory. You've got this.</p>
+        <div id="score" aria-label="Sheet music"></div>
+        <p class="score-hint">Click any note to jump there. The red note is what's playing.</p>
+      </div>
+
+      <div class="layers">
+        <h2>Melody (violin)</h2>
+        <div class="slider">
+          <label for="melody-volume">Volume: <span id="melody-volume-readout">30%</span></label>
+          <input type="range" id="melody-volume" min="0" max="100" value="30" step="1" />
+        </div>
+
+        <h2>Organ (chords)</h2>
+        <div class="slider">
+          <label for="organ-volume">Volume: <span id="organ-volume-readout">30%</span></label>
+          <input type="range" id="organ-volume" min="0" max="100" value="30" step="1" />
+        </div>
+
+        <h2>Kick (beat)</h2>
+        <div class="slider">
+          <label for="kick-volume">Volume: <span id="kick-volume-readout">100%</span></label>
+          <input type="range" id="kick-volume" min="0" max="100" value="100" step="1" />
+        </div>
+      </div>
+
+      <p class="status" id="status">Initializing&hellip;</p>
+      <p class="hint">Spacebar toggles play/pause. Three layers, one Tone.js clock. <span id="version"></span></p>
+
+      <div class="art"><img src="fiddler.png" alt="Pen-and-ink drawing of a seated fiddler" /></div>
     </div>
   </div>
-
-  <p class="status" id="status">Initializing…</p>
-  <p class="hint">Spacebar toggles play/pause. Three layers, one Tone.js clock. <span id="version"></span></p>
 
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.12"></script>
+  <script src="js/playalong.js?v=1.13"></script>
 </body>
 </html>
