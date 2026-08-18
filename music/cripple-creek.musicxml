@@ -121,7 +121,7 @@
    </attributes>
    <harmony color="#000000" default-y="32">
     <root>
-     <root-step>E</root-step>
+     <root-step>A</root-step>
     </root>
     <kind>major</kind>
     <staff>1</staff>

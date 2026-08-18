@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.15"; // layer mixer: one line per track (name + % on the same row)
+  const APP_VERSION = "1.16"; // chord fixes: Shady Grove Cm->C, Blackest Crow F#->F#m (x4), Cripple Creek pickup E->A
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed

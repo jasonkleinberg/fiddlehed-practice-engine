@@ -499,7 +499,7 @@
      <root-step>F</root-step>
      <root-alter>1</root-alter>
     </root>
-    <kind>major</kind>
+    <kind>minor</kind>
     <staff>1</staff>
    </harmony>
    <note color="#000000" default-x="15">
@@ -987,7 +987,7 @@
      <root-step>F</root-step>
      <root-alter>1</root-alter>
     </root>
-    <kind>major</kind>
+    <kind>minor</kind>
     <staff>1</staff>
    </harmony>
    <note color="#000000" default-x="15" default-y="-50">
@@ -1054,7 +1054,7 @@
      <root-step>F</root-step>
      <root-alter>1</root-alter>
     </root>
-    <kind>major</kind>
+    <kind>minor</kind>
     <staff>1</staff>
    </harmony>
    <note color="#000000" default-x="15" default-y="-50">
@@ -1113,7 +1113,7 @@
      <root-step>F</root-step>
      <root-alter>1</root-alter>
     </root>
-    <kind>major</kind>
+    <kind>minor</kind>
     <staff>1</staff>
    </harmony>
    <note color="#000000" default-x="15" default-y="-50">

@@ -554,7 +554,7 @@
     <root>
      <root-step>C</root-step>
     </root>
-    <kind>minor</kind>
+    <kind>major</kind>
     <staff>1</staff>
    </harmony>
    <note color="#000000" default-x="122" default-y="5">
