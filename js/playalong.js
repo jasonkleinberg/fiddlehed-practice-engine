@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.17"; // GA4 instrumentation (pe_* events) + replaceState no longer clobbers URL params
+  const APP_VERSION = "1.18"; // GA4 measurement ID live (G-EX40FLVXGH) — analytics now actually collecting
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed

@@ -9,20 +9,22 @@
        Added 2026-08-24. Instruments the beta: "do students use it" cannot
        be answered after the fact.
 
-       ⚠️  ONE LINE TO CHANGE: put the Practice Engine property's
-           Measurement ID in PE_GA_ID below (GA4 Admin -> Data streams ->
-           Web -> Measurement ID, looks like G-AB12CD34EF).
-           While it is still the placeholder, analytics is OFF and says so
-           in the console -- no broken requests, no bad data.
+       LIVE since 2026-08-24. Property "Practice Engine" (551469307),
+       stream "Practice Engine (web)" (15495626590), under the FiddleHed
+       account (100206817). Reporting timezone: Detroit.
 
-       Use a NEW property, not MetroDrone's: mixing a second app into that
-       property would wreck the baseline we're about to measure the
-       MetroDrone relaunch against.
+       Deliberately a SEPARATE property from MetroDrone (521299059) --
+       mixing a second app into that one would wreck the baseline we are
+       about to measure the MetroDrone relaunch against.
+
+       The guard below means that if PE_GA_ID is ever blanked or reset to
+       the placeholder, analytics goes quiet and says so in the console
+       rather than firing into nowhere.
 
        Event spec + rationale: central-command/threads/practice-engine.md
        ================================================================= -->
   <script>
-    window.PE_GA_ID = "G-XXXXXXXXXX";   // <-- replace this, nothing else
+    window.PE_GA_ID = "G-EX40FLVXGH";   // Practice Engine property 551469307
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
     (function () {
@@ -367,6 +369,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.17"></script>
+  <script src="js/playalong.js?v=1.18"></script>
 </body>
 </html>
