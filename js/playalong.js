@@ -18,13 +18,62 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.16"; // chord fixes: Shady Grove Cm->C, Blackest Crow F#->F#m (x4), Cripple Creek pickup E->A
+  const APP_VERSION = "1.17"; // GA4 instrumentation (pe_* events) + replaceState no longer clobbers URL params
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
   // Ballydesmond XML on disk, browser showed the old one). Version-stamping
   // the URLs makes every app version fetch fresh copies.
   const bust = (url) => url + "?v=" + APP_VERSION;
+
+  // ---- Analytics (GA4 custom events) --------------------------------------
+  // Added v1.17. The GA4 tag lives in playalong.html; this fires the events.
+  // The beta's three bars (opened it / came back on a 2nd day / used tempo or
+  // loop) are all EVENT questions -- pageviews answer none of them.
+  //
+  // Context is captured ONCE, right here at load, and deliberately BEFORE
+  // anything can rewrite the URL:
+  //   t       tester id from the beta invite link (?t=deb). The 2nd-day
+  //           metric resolves per named tester, so it does not depend on
+  //           localStorage -- which is unreliable for us anyway, since the
+  //           app runs in a THIRD-PARTY iframe (jkleinberg.com inside
+  //           fiddlehed.com) where Safari/iOS caps script-writable storage.
+  //   member  '1'/'0' from the WP embed shortcode. Never a name or email.
+  //   solo    the single-tune lesson-page embed (?solo=1) vs the full library.
+  //   surface 'embed' inside an iframe, 'direct' standalone.
+  const PE_PARAMS = new URLSearchParams(location.search);
+  const PE_CONTEXT = {
+    t: PE_PARAMS.get("t") || "none",
+    member: PE_PARAMS.get("member") || "unknown",
+    solo: PE_PARAMS.get("solo") ? "1" : "0",
+    surface: (window.self !== window.top) ? "embed" : "direct",
+    app_version: APP_VERSION,
+  };
+  const PE_LOADED_AT = Date.now();
+  let pePlayStartedAt = null;   // set on first Play, for true listening time
+  let pePlayed = false;
+
+  function track(name, params) {
+    try {
+      if (typeof gtag !== "function") return;
+      gtag("event", name, Object.assign(
+        {}, PE_CONTEXT, { tune: (engine && engine.current && engine.current.slug) || "none" }, params || {}
+      ));
+      console.log("[track]", name, params || {});
+    } catch (err) {
+      // Analytics must never break the instrument.
+      console.warn("[track] failed", err);
+    }
+  }
+
+  // Sliders fire on every pixel of travel. Debounce so GA4 records the value
+  // the student landed on, not the sixty they dragged through.
+  function trackDebounced(name, params, key, delay) {
+    trackDebounced.timers = trackDebounced.timers || {};
+    clearTimeout(trackDebounced.timers[key]);
+    trackDebounced.timers[key] = setTimeout(() => track(name, params), delay || 1200);
+  }
+  // -------------------------------------------------------------------------
   const INDEX_FILE = "music/index.json";
   const DEFAULT_BPM = 90;   // used when a tune's index.json tempo is null
   const VIOLIN_BASE =
@@ -704,6 +753,8 @@
         const btn = document.createElement("button");
         btn.textContent = sec.label;
         btn.addEventListener("click", () => {
+          // "Used tempo OR loop" is a beta success bar -- is the loop the draw?
+          track("pe_loop_use", { section: sec.label });
           setSection(sec);
           btn.blur();   // keep spacebar on play/pause, not this button
         });
@@ -1062,6 +1113,8 @@
     if (!els.scoreToggle || !els.scoreWrap) return;
     els.scoreToggle.addEventListener("click", async () => {
       engine.scoreHidden = !engine.scoreHidden;
+      // Is the v1.12 memorization toggle getting used at all?
+      track("pe_sheet_toggle", { hidden: engine.scoreHidden ? "1" : "0" });
       els.scoreWrap.classList.toggle("score-hidden", engine.scoreHidden);
       els.scoreToggle.classList.toggle("active", engine.scoreHidden);
       els.scoreToggle.textContent =
@@ -1163,7 +1216,15 @@
 
       if (els.tuneSelect.value !== rec.slug) els.tuneSelect.value = rec.slug;
       try {
-        history.replaceState(null, "", "?tune=" + rec.slug);
+        // v1.17 FIX: this used to be `"?tune=" + rec.slug`, which replaced the
+        // ENTIRE query string -- silently destroying ?t=<tester>, ?member= and
+        // ?solo= the first time anyone changed tunes. A tester who then
+        // bookmarked the rewritten URL became anonymous for the rest of the
+        // beta, which would have quietly broken the one metric the beta
+        // exists to measure (return on a 2nd separate day). Merge, don't clobber.
+        const qs = new URLSearchParams(location.search);
+        qs.set("tune", rec.slug);
+        history.replaceState(null, "", "?" + qs.toString());
       } catch (_) { /* file:// or exotic embed contexts — harmless */ }
 
       if (wasPlaying) {
@@ -1176,6 +1237,8 @@
         els.stop.disabled = true;
       }
       console.log(`[playalong] loaded ${rec.slug}:`, engine.score);
+      // Which tunes actually carry the thing.
+      track("pe_tune_load", { tune: rec.slug, bpm: Math.round(Tone.Transport.bpm.value) });
     } catch (err) {
       console.error(err);
       setStatus("Error loading tune: " + err.message);
@@ -1187,6 +1250,13 @@
     if (!engine.ready || !engine.melodyPart) return;
     await Tone.start();                       // unlock audio on user gesture
     Tone.Transport.start();
+    // Play pressed is the real "used it" signal. Page views mean nothing.
+    if (!pePlayStartedAt) pePlayStartedAt = Date.now();
+    pePlayed = true;
+    track("pe_start", {
+      bpm: parseInt(els.tempo.value, 10) || 0,
+      section: (engine.section && engine.section.label) || "Full",
+    });
     setStatus("Playing.");
     els.play.disabled = true;
     els.pause.disabled = false;
@@ -1201,6 +1271,10 @@
   }
 
   function onStop() {
+    track("pe_stop", {
+      seconds: pePlayStartedAt ? Math.round((Date.now() - pePlayStartedAt) / 1000) : 0,
+    });
+    pePlayStartedAt = null;
     Tone.Transport.stop();
     Tone.Transport.position =
       engine.section ? beatToBBS(engine.section.start) : 0;
@@ -1220,19 +1294,24 @@
       const bpm = parseInt(els.tempo.value, 10);
       els.tempoOut.textContent = `${bpm} BPM`;
       Tone.Transport.bpm.value = bpm;
+      trackDebounced("pe_tempo_set", { bpm }, "tempo");
     });
 
-    const vol = (slider, out, getGain) => {
+    const vol = (slider, out, getGain, layer) => {
       slider.addEventListener("input", () => {
         const v = parseInt(slider.value, 10);
         out.textContent = `${v}%`;
         const g = getGain();
         if (g) g.gain.rampTo(v / 100, 0.03);
+        // Worth its own event: a student who drops MELODY to 0 and leaves the
+        // organ up is practising BACKUP, not the tune. That is a different
+        // product being used, and we would otherwise never see it.
+        trackDebounced("pe_volume_set", { layer, value: v }, "vol_" + layer);
       });
     };
-    vol(els.melVol, els.melOut, () => engine.melodyGain);
-    vol(els.orgVol, els.orgOut, () => engine.organGain);
-    vol(els.kickVol, els.kickOut, () => engine.kickGain);
+    vol(els.melVol, els.melOut, () => engine.melodyGain, "melody");
+    vol(els.orgVol, els.orgOut, () => engine.organGain, "organ");
+    vol(els.kickVol, els.kickOut, () => engine.kickGain, "kick");
   }
 
   // =========================================================================
@@ -1290,6 +1369,15 @@
       setStatus("Error: " + err.message);
     }
   }
+
+  // Most people close the tab rather than pressing Stop, so this is the more
+  // reliable session-length signal. GA4 sends event beacons on pagehide.
+  window.addEventListener("pagehide", () => {
+    track("pe_session_end", {
+      seconds: Math.round((Date.now() - PE_LOADED_AT) / 1000),
+      played: pePlayed ? "1" : "0",
+    });
+  });
 
   window.addEventListener("DOMContentLoaded", init);
   window.__engine = engine;   // for in-browser debugging
