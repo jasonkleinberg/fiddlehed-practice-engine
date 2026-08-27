@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.20"; // v1.19 QA sweep + self-hosted trimmed violin samples (melody/kick sync)
+  const APP_VERSION = "1.21"; // attack-normalized sample set v2 (default) + ?samples=v1 A/B switch
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -83,7 +83,34 @@
   // (8ms fade-in), capped at 4.5s. Residual onsets measured offline (50% of
   // early-sustain level) live in VIOLIN_ONSET below — remeasure if these
   // files ever change.
-  const VIOLIN_BASE = "samples/violin/";
+  // v1.21: TWO sample sets, A/B-switchable via URL param — append
+  // &samples=v1 to compare. v1 = trimmed only (natural bow swell kept);
+  // v2 (default) = trimmed + attack-normalized (every sample rises to
+  // sustain level over a uniform 25ms ramp, so per-note timing jitter
+  // collapses: measured onsets 11-13ms across all 15, was 9-78ms).
+  const SAMPLE_SETS = {
+    v1: {
+      base: "samples/violin/",
+      leadBias: 0.01, leadTempo: 0.02,
+      onset: {
+        G3: 0.015, A3: 0.009, C4: 0.035, E4: 0.017, G4: 0.078,
+        A4: 0.020, C5: 0.038, E5: 0.020, G5: 0.026, A5: 0.029,
+        C6: 0.055, E6: 0.046, G6: 0.015, A6: 0.009, C7: 0.023,
+      },
+    },
+    v2: {
+      base: "samples/violin-v2/",
+      leadBias: 0.005, leadTempo: 0.01,
+      onset: {
+        G3: 0.011, A3: 0.011, C4: 0.012, E4: 0.011, G4: 0.013,
+        A4: 0.012, C5: 0.013, E5: 0.012, G5: 0.012, A5: 0.012,
+        C6: 0.013, E6: 0.011, G6: 0.011, A6: 0.012, C7: 0.012,
+      },
+    },
+  };
+  const SAMPLE_SET =
+    new URLSearchParams(location.search).get("samples") === "v1" ? "v1" : "v2";
+  const VIOLIN_BASE = SAMPLE_SETS[SAMPLE_SET].base;
   const VIOLIN_URLS = {
     A3: "A3.wav", C4: "C4.wav", E4: "E4.wav", G4: "G4.wav",
     A4: "A4.wav", C5: "C5.wav", E5: "E5.wav", G5: "G5.wav",
@@ -567,14 +594,8 @@
     // actual CDN mp3s). A bowed sample "speaks" this long after triggering —
     // the source of the melody dragging. Varies 3x across samples (A3 29ms,
     // G4 110ms), so a single global lead can't be right for every note.
-    // v1.20: measured from the trimmed local wavs (t50 of early-sustain
-    // level, from file start). Old table was 30%-of-global-peak on the
-    // untrimmed CDN files — wrong reference on a 15s swell.
-    const VIOLIN_ONSET = {
-      G3: 0.015, A3: 0.009, C4: 0.035, E4: 0.017, G4: 0.078,
-      A4: 0.020, C5: 0.038, E5: 0.020, G5: 0.026, A5: 0.029,
-      C6: 0.055, E6: 0.046, G6: 0.015, A6: 0.009, C7: 0.023,
-    };
+    // v1.21: per-set measured onsets (t50 of early-sustain, from file start).
+    const VIOLIN_ONSET = SAMPLE_SETS[SAMPLE_SET].onset;
     const NAME_MIDI = {};   // "G4" → 67, etc.
     for (const name of Object.keys(VIOLIN_ONSET)) {
       NAME_MIDI[name] =
@@ -587,7 +608,7 @@
     // 7/7 Jason ear-test: still dragging at bias 0.02 → raised to 0.05.
     // (The 30%-of-peak onset measure likely underestimates PERCEIVED attack
     // on bowed samples; perceived onset sits nearer 50% of peak.)
-    window.__leadBias = window.__leadBias ?? 0.01;  // v1.20: big bias was patching the bad table; now measured
+    window.__leadBias = window.__leadBias ?? SAMPLE_SETS[SAMPLE_SET].leadBias;  // per-set; console-tunable
     // TEMPO-AWARE LEAD (7/7, Jason's key observation): timing sounds perfect
     // at 60 BPM but lags as tempo rises, with NO drift. Constant residual
     // error + shrinking beat = the slow bow attack occupies a growing
@@ -595,7 +616,7 @@
     // later relative to the kick. Fix: an extra lead that is 0 at 60 BPM
     // (already right there) and grows with tempo. __leadTempo = seconds of
     // extra lead per doubling-ish of tempo (default 0.05 → +50ms at 120 BPM).
-    window.__leadTempo = window.__leadTempo ?? 0.02;  // v1.20: root cause (slow sample attack) trimmed away; small residual only
+    window.__leadTempo = window.__leadTempo ?? SAMPLE_SETS[SAMPLE_SET].leadTempo;  // per-set; console-tunable
     function melodyLeadFor(midi) {
       let bestName = "A4", bestD = Infinity;
       for (const name in NAME_MIDI) {
