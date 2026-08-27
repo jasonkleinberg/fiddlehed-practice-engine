@@ -90,7 +90,8 @@ Chords ("we'll eventually have a chord viewer for all lessons")
 
 ---
 
-## Status — 2026-08-26 (v1.19, on disk, NOT pushed)
+## Status — 2026-08-26 (v1.20, on disk, NOT pushed)
 
 DONE: A2 (lead retuned — ear-check), A4, A5, A6, A7 (all three diagnosed + fixed), B2 (16.03; 16.07 was never indexed), B3 all incl. optionals, B4 (saint-anne's, lucy-farr's, fisher's, dram, done-gone voltas rebuilt; girl-i-left m7 octave), A1 (sliders above score, sticky transport, autoScroll yields to user), coleraine key label.
 OPEN: B1 re-exports (Jason) · southwind/coleraine pickup restructures · A3 pulsing re-listen · bucket C.
+v1.20 addendum: A2/A3 root-caused — violin samples trimmed + self-hosted (samples/violin/*.wav), onset table re-measured, lead knobs reduced. Validation recording protocol: one capture, melody+kick only, analysis by band-split.
