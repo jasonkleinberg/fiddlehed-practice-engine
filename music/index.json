@@ -825,21 +825,6 @@
   "status": "playable"
  },
  {
-  "file": "bile-em-cabbage-down__16.03.musicxml",
-  "title": "Bile \u2019em Cabbage Down \u2013 Chord Backup",
-  "slug": "bile-em-cabbage-down__16.03",
-  "lesson_id": "16.03",
-  "module": 16,
-  "key": "D",
-  "timeSignature": "4/4",
-  "tempo": null,
-  "hasChords": true,
-  "videoLessonUrl": "https://fiddlehed.com/courses/intermediate-fiddle-lessons/2-6-low-fourth-finger-i-iv-v/playing-backup-on-songs/",
-  "genre": "technique,play_along,guided_practice_session",
-  "difficulty": "",
-  "status": "playable"
- },
- {
   "file": "house-of-the-rising-sun.musicxml",
   "title": "House Of The Rising Sun",
   "slug": "house-of-the-rising-sun",
@@ -980,7 +965,7 @@
   "slug": "coleraine",
   "lesson_id": "19.02",
   "module": 19,
-  "key": "C",
+  "key": "Dm/G",
   "timeSignature": "6/8",
   "tempo": null,
   "hasChords": true,

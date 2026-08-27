@@ -839,6 +839,9 @@
   </measure>
   <!--============== Part: P1, Measure: 8 ==============-->
   <measure number="8" width="240">
+   <barline location="left">
+    <ending number="1" type="start" />
+   </barline>
    <harmony color="#000000" default-y="30">
     <root>
      <root-step>F</root-step>
@@ -962,11 +965,15 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
+    <ending number="1" type="stop" />
     <repeat direction="backward" />
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 9 ==============-->
   <measure number="9" width="311">
+   <barline location="left">
+    <ending number="2" type="start" />
+   </barline>
    <print new-system="yes">
     <system-layout>
      <system-margins>
@@ -1101,7 +1108,7 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
-    <repeat direction="backward" />
+    <ending number="2" type="discontinue" />
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 10 ==============-->
@@ -1824,6 +1831,9 @@
   </measure>
   <!--============== Part: P1, Measure: 17 ==============-->
   <measure number="17" width="245">
+   <barline location="left">
+    <ending number="1" type="start" />
+   </barline>
    <harmony color="#000000" default-y="30">
     <root>
      <root-step>G</root-step>
@@ -1888,11 +1898,15 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
+    <ending number="1" type="stop" />
     <repeat direction="backward" />
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 18 ==============-->
   <measure number="18" width="304">
+   <barline location="left">
+    <ending number="2" type="start" />
+   </barline>
    <harmony color="#000000" default-y="30">
     <root>
      <root-step>G</root-step>
@@ -1971,7 +1985,7 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
-    <repeat direction="backward" />
+    <ending number="2" type="discontinue" />
    </barline>
   </measure>
  </part>

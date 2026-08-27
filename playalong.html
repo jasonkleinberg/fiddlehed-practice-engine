@@ -146,7 +146,15 @@
     }
 
     /* ---- Transport ---- */
-    .controls { margin: 1.2rem 0; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    /* v1.19: sticky — the iframe is short (400px default), so the transport
+       must survive scrolling into the score. Background covers what slides under. */
+    .controls {
+      margin: 1.2rem 0; display: flex; gap: 0.6rem; flex-wrap: wrap;
+      position: sticky; top: 0; z-index: 30;
+      background: var(--fh-cream);
+      padding: 0.5rem 0;
+      box-shadow: 0 6px 8px -8px rgba(0,0,0,0.35);
+    }
     .controls button {
       flex: 1 1 6rem;
       padding: 0.65rem 1rem; font-size: 1.1rem; cursor: pointer;
@@ -335,13 +343,6 @@
         <input type="range" id="tempo" min="40" max="200" value="80" step="1" />
       </div>
 
-      <div class="score-wrap" id="score-wrap">
-        <button class="score-toggle" id="score-toggle" type="button" aria-pressed="false">Hide sheet music</button>
-        <p class="memorize-hint">Playing from memory. You've got this.</p>
-        <div id="score" aria-label="Sheet music"></div>
-        <p class="score-hint">Click any note to jump there. The red note is what's playing.</p>
-      </div>
-
       <div class="layers">
         <div class="slider">
           <label for="melody-volume"><span class="track-name">Melody (violin)</span><span id="melody-volume-readout">30%</span></label>
@@ -354,10 +355,18 @@
         </div>
 
         <div class="slider">
-          <label for="kick-volume"><span class="track-name">Kick (beat)</span><span id="kick-volume-readout">100%</span></label>
-          <input type="range" id="kick-volume" min="0" max="100" value="100" step="1" />
+          <label for="kick-volume"><span class="track-name">Kick (beat)</span><span id="kick-volume-readout">30%</span></label>
+          <input type="range" id="kick-volume" min="0" max="100" value="30" step="1" />
         </div>
       </div>
+
+      <div class="score-wrap" id="score-wrap">
+        <button class="score-toggle" id="score-toggle" type="button" aria-pressed="false">Hide sheet music</button>
+        <p class="memorize-hint">Playing from memory. You've got this.</p>
+        <div id="score" aria-label="Sheet music"></div>
+        <p class="score-hint">Click any note to jump there.</p>
+      </div>
+
 
       <p class="status" id="status">Initializing&hellip;</p>
       <p class="hint">Spacebar toggles play/pause. Three layers, one Tone.js clock. <span id="version"></span></p>
@@ -369,6 +378,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.18"></script>
+  <script src="js/playalong.js?v=1.19"></script>
 </body>
 </html>

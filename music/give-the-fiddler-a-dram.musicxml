@@ -396,6 +396,9 @@
   </measure>
   <!--============== Part: P1, Measure: 4 ==============-->
   <measure number="4" width="219">
+   <barline location="left">
+    <ending number="1" type="start" />
+   </barline>
    <harmony color="#000000" default-y="36">
     <root>
      <root-step>G</root-step>
@@ -481,11 +484,15 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
+    <ending number="1" type="stop" />
     <repeat direction="backward" />
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 5 ==============-->
   <measure number="5" width="253">
+   <barline location="left">
+    <ending number="2" type="start" />
+   </barline>
    <print new-system="yes">
     <system-layout>
      <system-margins>
@@ -583,7 +590,7 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
-    <repeat direction="backward" />
+    <ending number="2" type="discontinue" />
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 6 ==============-->
@@ -1197,6 +1204,9 @@
   </measure>
   <!--============== Part: P1, Measure: 13 ==============-->
   <measure number="13" width="184">
+   <barline location="left">
+    <ending number="1" type="start" />
+   </barline>
    <harmony color="#000000" default-y="36">
     <root>
      <root-step>G</root-step>
@@ -1282,11 +1292,15 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
+    <ending number="1" type="stop" />
     <repeat direction="backward" />
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 14 ==============-->
   <measure number="14" width="184">
+   <barline location="left">
+    <ending number="2" type="start" />
+   </barline>
    <harmony color="#000000" default-y="36">
     <root>
      <root-step>G</root-step>
@@ -1372,7 +1386,7 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
-    <repeat direction="backward" />
+    <ending number="2" type="discontinue" />
    </barline>
   </measure>
  </part>

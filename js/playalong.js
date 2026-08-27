@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.18"; // GA4 measurement ID live (G-EX40FLVXGH) — analytics now actually collecting
+  const APP_VERSION = "1.19"; // chord dedup (audio+display), metronome-mark strip, kick default 30%, hint text trim
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -256,6 +256,7 @@
       const m = measures[mi];
       const measureStart = cursor;
       playInstances.push({ measureIdx: mi, startTick: measureStart });
+      let measureMax = cursor;   // v1.19: furthest tick any voice reaches
       for (const el of [...m.children]) {
         switch (el.tagName) {
           case "attributes": {
@@ -311,6 +312,7 @@
             break;
           }
           case "backup":
+            measureMax = Math.max(measureMax, cursor);   // v1.19
             cursor -= parseInt(
               el.querySelector("duration")?.textContent || "0", 10);
             break;
@@ -320,6 +322,9 @@
             break;
         }
       }
+      // v1.19: if a backup voice ended short, snap to the longest voice —
+      // otherwise the next measure starts early (kesh-jig__17.09 bar 11 bug).
+      cursor = Math.max(cursor, measureMax);
       if (firstMeasureTicks === null) firstMeasureTicks = cursor - measureStart;
     }
 
@@ -377,6 +382,22 @@
       pickupBeats = barBeats - firstNoteBeat;           // embedded
       loopStartBeats = firstNoteBeat;                   // skip the silent rests
       bodyStartBeats = barBeats;
+    }
+
+    // v1.19: collapse consecutive identical chords so the organ sustains
+    // instead of re-attacking every bar (chords are notated per-bar in many
+    // exports). Keep any chord that lands on a section pass start so A/B
+    // looping still opens with its chord sounding.
+    const passStartTicks = new Set();
+    for (const sec of playSections)
+      for (const o of sec.passStarts)
+        passStartTicks.add(
+          o < playInstances.length ? playInstances[o].startTick : cursor);
+    for (let i = chords.length - 1; i > 0; i--) {
+      const c = chords[i], p = chords[i - 1];
+      if (passStartTicks.has(c.tick)) continue;
+      if (p.rootStep === c.rootStep && p.rootAlter === c.rootAlter &&
+          p.kind === c.kind) chords.splice(i, 1);
     }
 
     return {
@@ -566,7 +587,7 @@
     // later relative to the kick. Fix: an extra lead that is 0 at 60 BPM
     // (already right there) and grows with tempo. __leadTempo = seconds of
     // extra lead per doubling-ish of tempo (default 0.05 → +50ms at 120 BPM).
-    window.__leadTempo = window.__leadTempo ?? 0.05;
+    window.__leadTempo = window.__leadTempo ?? 0.08;  // v1.19: 0.05 still lagged >100 BPM (8/26 QA)
     function melodyLeadFor(midi) {
       let bestName = "A4", bestD = Infinity;
       for (const name in NAME_MIDI) {
@@ -576,7 +597,7 @@
       const rate = Math.pow(2, (midi - NAME_MIDI[bestName]) / 12);
       const tempoTerm =
         window.__leadTempo * Math.max(0, Tone.Transport.bpm.value / 60 - 1);
-      return Math.min(0.25,
+      return Math.min(0.32,   // v1.19: cap was clamping big leads at fast tempos (must stay < lookAhead 0.35)
         VIOLIN_ONSET[bestName] / rate + window.__leadBias + tempoTerm);
     }
 
@@ -632,7 +653,9 @@
     const compound = s.beatType === 8 && s.beatsPerBar % 3 === 0;
     engine.kickEventId = Tone.Transport.scheduleRepeat((time) => {
       engine.kick.triggerAttackRelease("C2", "8n", time);
-    }, compound ? "4n." : "4n", "0:0:0");
+    }, compound ? "4n." : "4n", beatToBBS(s.bodyStartBeats));   // v1.19: first
+    // kick on the first real downbeat — silent through any pickup, and every
+    // hit after lands on the barline grid instead of a pickup-length off it.
 
     // Loop the tune (Full defaults; setSection overrides for A/B parts).
     // Start = first note (skips rest-padded lead-ins); end = total − pickup,
@@ -834,6 +857,35 @@
       for (const f of [...doc.querySelectorAll("technical > fingering")]) {
         f.remove();
         changed = true;
+      }
+      // v1.19: metronome marks are player chrome, not sheet music — remove.
+      for (const dir of [...doc.querySelectorAll("part direction")]) {
+        if (dir.querySelector("direction-type > metronome")) {
+          dir.remove();
+          changed = true;
+        }
+      }
+      // v1.19: chord symbols only where the chord CHANGES. Walk measures in
+      // document order; a repeat of the previous harmony is dropped. Reset at
+      // forward-repeat barlines so each repeated section reprints its chord.
+      const chordSig = (h) =>
+        (h.querySelector("root > root-step")?.textContent || "") + "|" +
+        (h.querySelector("root > root-alter")?.textContent || "0") + "|" +
+        (h.querySelector("kind")?.textContent || "major");
+      for (const partEl of [...doc.querySelectorAll("part")]) {
+        let last = null;
+        for (const m of [...partEl.querySelectorAll(":scope > measure")]) {
+          if (m.querySelector('barline > repeat[direction="forward"]')) last = null;
+          for (const h of [...m.querySelectorAll(":scope > harmony")]) {
+            const sig = chordSig(h);
+            if (sig === last) {
+              h.remove();
+              changed = true;
+            } else {
+              last = sig;
+            }
+          }
+        }
       }
       if (!changed) return xmlText;
       // XMLSerializer omits the XML declaration; OSMD's load() requires it.
@@ -1069,11 +1121,27 @@
   }
 
   // Keep the sounding note in a comfortable vertical band while playing.
+  // v1.19: but NEVER fight the user (the QA note "I have to pause the player
+  // in order to scroll down"). Two rules:
+  //   1. A manual scroll in the last 1.5s wins — skip.
+  //   2. If the note is fully off-screen AND the user has scrolled since our
+  //      last programmatic scroll, they went somewhere on purpose — stay put.
+  //      (A loop-wrap teleport with no manual scroll still follows.)
+  // Follow resumes automatically once the note is back in view.
+  let manualScrollAt = -1, autoScrollAt = 0;
+  for (const evt of ["wheel", "touchmove"])
+    window.addEventListener(evt, () => { manualScrollAt = performance.now(); },
+      { passive: true });
   function autoScroll(el) {
     if (!el || Tone.Transport.state !== "started") return;
+    const now = performance.now();
+    if (now - manualScrollAt < 1500) return;                      // rule 1
     const r = el.getBoundingClientRect();
+    const offscreen = r.bottom < 0 || r.top > window.innerHeight;
+    if (offscreen && manualScrollAt > autoScrollAt) return;       // rule 2
     const pad = 90;
     if (r.top < pad || r.bottom > window.innerHeight - pad) {
+      autoScrollAt = now;
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }

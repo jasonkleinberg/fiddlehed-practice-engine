@@ -516,7 +516,7 @@
     <stem>down</stem>
     <staff>1</staff>
    </note>
-   <note color="#000000" default-x="177" default-y="-40">
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="177" default-y="-40">
     <pitch>
      <step>E</step>
      <octave>5</octave>
@@ -895,7 +895,7 @@
     <stem>down</stem>
     <staff>1</staff>
    </note>
-   <note color="#000000" default-x="107" default-y="-40">
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="107" default-y="-40">
     <pitch>
      <step>E</step>
      <octave>5</octave>

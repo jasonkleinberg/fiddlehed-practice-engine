@@ -1443,14 +1443,8 @@
   </measure>
   <!--============== Part: P1, Measure: 14 ==============-->
   <measure number="14" width="248">
-   <harmony color="#000000" default-y="25">
-    <root>
-     <root-step>G</root-step>
-    </root>
-    <kind>major</kind>
-    <staff>1</staff>
-   </harmony>
-   <note color="#000000" default-x="15" default-y="-54">
+   
+   <harmony><root><root-step>G</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="15" default-y="-54">
     <pitch>
      <step>B</step>
      <octave>4</octave>
@@ -1503,7 +1497,7 @@
     <staff>1</staff>
     <beam number="1">end</beam>
    </note>
-   <note color="#000000" default-x="131" default-y="17">
+   <harmony><root><root-step>D</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="131" default-y="17">
     <pitch>
      <step>D</step>
      <octave>5</octave>

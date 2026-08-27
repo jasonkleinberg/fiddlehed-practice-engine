@@ -477,7 +477,7 @@
   </measure>
   <!--============== Part: P1, Measure: 7 ==============-->
   <measure number="7" width="405">
-   <note color="#000000" default-x="15" default-y="10">
+   <harmony><root><root-step>A</root-step></root><kind>minor</kind></harmony><note color="#000000" default-x="15" default-y="10">
     <pitch>
      <step>A</step>
      <octave>4</octave>
@@ -501,14 +501,8 @@
     <stem>up</stem>
     <staff>1</staff>
    </note>
-   <harmony color="#000000" default-y="25">
-    <root>
-     <root-step>E</root-step>
-    </root>
-    <kind>major</kind>
-    <staff>1</staff>
-   </harmony>
-   <note color="#000000" default-x="187" default-y="9">
+   
+   <harmony><root><root-step>E</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="187" default-y="9">
     <pitch>
      <step>G</step>
      <alter>1</alter>

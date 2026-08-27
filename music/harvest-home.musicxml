@@ -1001,14 +1001,8 @@
   </measure>
   <!--============== Part: P1, Measure: 8 ==============-->
   <measure number="8" width="215">
-   <harmony color="#000000" default-y="25">
-    <root>
-     <root-step>A</root-step>
-    </root>
-    <kind>major</kind>
-    <staff>1</staff>
-   </harmony>
-   <note color="#000000" default-x="15" default-y="-54">
+   
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="15" default-y="-54">
     <pitch>
      <step>E</step>
      <octave>5</octave>
@@ -1061,7 +1055,7 @@
     <staff>1</staff>
     <beam number="1">end</beam>
    </note>
-   <note color="#000000" default-x="115" default-y="-49">
+   <harmony><root><root-step>G</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="115" default-y="-49">
     <pitch>
      <step>G</step>
      <octave>5</octave>
@@ -1211,7 +1205,7 @@
     <bar-style>heavy-light</bar-style>
     <repeat direction="forward" />
    </barline>
-   <note color="#000000" default-x="27" default-y="-52">
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="27" default-y="-52">
     <pitch>
      <step>E</step>
      <octave>5</octave>
@@ -1297,7 +1291,7 @@
      <tuplet type="stop" bracket="no" number="1" default-y="-20" placement="above" />
     </notations>
    </note>
-   <note color="#000000" default-x="142" default-y="-52">
+   <harmony><root><root-step>D</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="142" default-y="-52">
     <pitch>
      <step>F</step>
      <alter>1</alter>
@@ -1387,7 +1381,7 @@
   </measure>
   <!--============== Part: P1, Measure: 11 ==============-->
   <measure number="11" width="232">
-   <note color="#000000" default-x="15" default-y="-54">
+   <harmony><root><root-step>G</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="15" default-y="-54">
     <pitch>
      <step>G</step>
      <octave>5</octave>
@@ -1440,7 +1434,7 @@
     <staff>1</staff>
     <beam number="1">end</beam>
    </note>
-   <note color="#000000" default-x="118" default-y="-52">
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="118" default-y="-52">
     <pitch>
      <step>E</step>
      <octave>5</octave>
@@ -1529,7 +1523,7 @@
   </measure>
   <!--============== Part: P1, Measure: 12 ==============-->
   <measure number="12" width="221">
-   <note color="#000000" default-x="15" default-y="-54">
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="15" default-y="-54">
     <pitch>
      <step>E</step>
      <octave>5</octave>
@@ -1904,7 +1898,7 @@
   </measure>
   <!--============== Part: P1, Measure: 14 ==============-->
   <measure number="14" width="410">
-   <note color="#000000" default-x="15" default-y="9">
+   <harmony><root><root-step>D</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="15" default-y="9">
     <pitch>
      <step>D</step>
      <octave>4</octave>
@@ -2134,7 +2128,7 @@
   </measure>
   <!--============== Part: P1, Measure: 16 ==============-->
   <measure number="16" width="327">
-   <note color="#000000" default-x="15" default-y="-54">
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="15" default-y="-54">
     <pitch>
      <step>E</step>
      <octave>5</octave>
@@ -2187,7 +2181,7 @@
     <staff>1</staff>
     <beam number="1">end</beam>
    </note>
-   <note color="#000000" default-x="171" default-y="-49">
+   <harmony><root><root-step>G</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="171" default-y="-49">
     <pitch>
      <step>G</step>
      <octave>5</octave>

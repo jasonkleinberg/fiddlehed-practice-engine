@@ -491,7 +491,7 @@
   </measure>
   <!--============== Part: P1, Measure: 5 ==============-->
   <measure number="5" width="183">
-   <note color="#000000" default-x="15" default-y="-40">
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="15" default-y="-40">
     <pitch>
      <step>E</step>
      <octave>5</octave>

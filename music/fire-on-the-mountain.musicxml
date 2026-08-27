@@ -118,14 +118,8 @@
     </clef>
     <staff-details number="1" print-object="yes" />
    </attributes>
-   <harmony color="#000000" default-y="25">
-    <root>
-     <root-step>D</root-step>
-    </root>
-    <kind>major</kind>
-    <staff>1</staff>
-   </harmony>
-   <note color="#000000" default-x="105" default-y="-44">
+   
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="105" default-y="-44">
     <pitch>
      <step>C</step>
      <alter>1</alter>
@@ -159,14 +153,8 @@
     <bar-style>heavy-light</bar-style>
     <repeat direction="forward" />
    </barline>
-   <harmony color="#000000" default-y="25">
-    <root>
-     <root-step>D</root-step>
-    </root>
-    <kind>major</kind>
-    <staff>1</staff>
-   </harmony>
-   <note color="#000000" default-x="27" default-y="-39">
+   
+   <harmony><root><root-step>A</root-step></root><kind>major</kind></harmony><note color="#000000" default-x="27" default-y="-39">
     <pitch>
      <step>E</step>
      <octave>5</octave>
