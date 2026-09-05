@@ -95,3 +95,9 @@ Chords ("we'll eventually have a chord viewer for all lessons")
 DONE: A2 (lead retuned — ear-check), A4, A5, A6, A7 (all three diagnosed + fixed), B2 (16.03; 16.07 was never indexed), B3 all incl. optionals, B4 (saint-anne's, lucy-farr's, fisher's, dram, done-gone voltas rebuilt; girl-i-left m7 octave), A1 (sliders above score, sticky transport, autoScroll yields to user), coleraine key label.
 OPEN: B1 re-exports (Jason) · southwind/coleraine pickup restructures · A3 pulsing re-listen · bucket C.
 v1.20 addendum: A2/A3 root-caused — violin samples trimmed + self-hosted (samples/violin/*.wav), onset table re-measured, lead knobs reduced. Validation recording protocol: one capture, melody+kick only, analysis by band-split.
+
+## Status — 2026-09-05 (v1.22, on disk, NOT pushed)
+
+DONE this round: B1 banshee / fiddle-fiddle / bile-var-1 (Jason re-exported, Claude wired) · fisher's + girl-i-left pickup notes (Jason's specs) · southwind + coleraine pickup-inside-repeat restructures · engine now understands that convention (Full loop whole-length, A section starts on its pickup; Peacock Rag fixed as a side effect) · relative-minor key labels · Angeline title.
+OPEN: B1 kesh-jig single-note (12.05) + kerry-polka double-stops (17.04) — Jason/Sibelius · A3 pulsing re-listen · bucket C.
+⚠️ Flags for Jason: fiddle-fiddle file is in D (sheet said A) · coleraine labelled Am/C, not Dm/G.

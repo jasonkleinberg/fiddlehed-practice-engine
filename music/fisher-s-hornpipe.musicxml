@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding='UTF-8' standalone='no' ?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="3.0">
  <work>
-  <work-title>Fisher&apos;s Hornpipe</work-title>
+  <work-title>Fisher's Hornpipe</work-title>
  </work>
  <identification>
   <creator type="composer">arranged by FiddleHed</creator>
@@ -13,11 +13,11 @@
    <software>Sibelius 25.12.1</software>
    <software>Direct export, not from Dolet</software>
    <encoding-description>Sibelius / MusicXML 3.0</encoding-description>
-   <supports element="print" type="yes" value="yes" attribute="new-system" />
-   <supports element="print" type="yes" value="yes" attribute="new-page" />
-   <supports element="accidental" type="yes" />
-   <supports element="beam" type="yes" />
-   <supports element="stem" type="yes" />
+   <supports element="print" type="yes" value="yes" attribute="new-system"/>
+   <supports element="print" type="yes" value="yes" attribute="new-page"/>
+   <supports element="accidental" type="yes"/>
+   <supports element="beam" type="yes"/>
+   <supports element="stem" type="yes"/>
   </encoding>
  </identification>
  <defaults>
@@ -65,13 +65,13 @@
    <note-size type="cue">75</note-size>
    <note-size type="grace">60</note-size>
   </appearance>
-  <music-font font-family="Opus Std" font-size="19.8425" />
-  <word-font font-family="Plantin MT Std" font-size="11.9365" />
-  <lyric-font font-family="Plantin MT Std" font-size="11.4715" />
-  <lyric-language xml:lang="en" />
+  <music-font font-family="Opus Std" font-size="19.8425"/>
+  <word-font font-family="Plantin MT Std" font-size="11.9365"/>
+  <lyric-font font-family="Plantin MT Std" font-size="11.4715"/>
+  <lyric-language xml:lang="en"/>
  </defaults>
  <credit page="1">
-  <credit-words default-x="600" default-y="155" font-family="Plantin MT Std" font-style="normal" font-size="22.0128" font-weight="normal" justify="center" valign="middle">Fisher&apos;s Hornpipe</credit-words>
+  <credit-words default-x="600" default-y="155" font-family="Plantin MT Std" font-style="normal" font-size="22.0128" font-weight="normal" justify="center" valign="middle">Fisher's Hornpipe</credit-words>
  </credit>
  <credit page="1">
   <credit-words default-x="1010" default-y="90" font-family="Plantin MT Std" font-style="normal" font-size="11.0064" font-weight="normal" justify="right" valign="middle">arranged by FiddleHed</credit-words>
@@ -89,7 +89,7 @@
    <score-instrument id="P1-I1">
     <instrument-name>Violin</instrument-name>
     <instrument-sound>strings.violin</instrument-sound>
-    <solo />
+    <solo/>
     <virtual-instrument>
      <virtual-library>General MIDI</virtual-library>
      <virtual-name>Violin</virtual-name>
@@ -124,7 +124,7 @@
      <sign>G</sign>
      <line>2</line>
     </clef>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <note color="#000000" default-x="106" default-y="-52">
     <pitch>
@@ -132,7 +132,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -146,7 +146,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -158,7 +158,7 @@
   <measure number="1" width="298">
    <barline location="left">
     <bar-style>heavy-light</bar-style>
-    <repeat direction="forward" />
+    <repeat direction="forward"/>
    </barline>
    <harmony color="#000000" default-y="25">
     <root>
@@ -173,7 +173,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -186,7 +186,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -200,7 +200,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -213,7 +213,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -233,7 +233,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -246,7 +246,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -259,7 +259,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -272,7 +272,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -296,7 +296,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -309,7 +309,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -322,7 +322,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -336,7 +336,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -356,7 +356,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -369,7 +369,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -382,7 +382,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -395,7 +395,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -419,7 +419,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -432,7 +432,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -446,7 +446,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -459,7 +459,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -479,7 +479,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -492,7 +492,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -505,7 +505,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -518,7 +518,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -538,7 +538,7 @@
     </system-layout>
    </print>
    <attributes>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <harmony color="#000000" default-y="25">
     <root>
@@ -554,7 +554,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -567,7 +567,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -580,7 +580,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -594,7 +594,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -614,7 +614,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
@@ -626,7 +626,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -640,7 +640,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -663,7 +663,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -676,7 +676,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -690,7 +690,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -703,7 +703,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -723,7 +723,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -736,7 +736,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -749,7 +749,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -762,7 +762,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -786,7 +786,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -799,7 +799,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -812,7 +812,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -826,7 +826,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -846,7 +846,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -859,7 +859,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -872,7 +872,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -885,7 +885,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -905,7 +905,7 @@
     </system-layout>
    </print>
    <attributes>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <harmony color="#000000" default-y="25">
     <root>
@@ -921,7 +921,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -934,7 +934,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -947,7 +947,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -960,7 +960,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -981,7 +981,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -994,7 +994,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1007,7 +1007,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1021,7 +1021,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1032,7 +1032,7 @@
   <!--============== Part: P1, Measure: 8 ==============-->
   <measure number="8" width="327">
    <barline location="left">
-    <ending number="1" type="start" />
+    <ending number="1" type="start"/>
    </barline>
    <harmony color="#000000" default-y="25">
     <root>
@@ -1047,7 +1047,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1060,7 +1060,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1073,7 +1073,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1087,7 +1087,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1100,7 +1100,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
@@ -1112,7 +1112,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1126,7 +1126,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1135,14 +1135,14 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
-    <ending number="1" type="stop" />
-    <repeat direction="backward" />
+    <ending number="1" type="stop"/>
+    <repeat direction="backward"/>
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 9 ==============-->
   <measure number="9" width="304">
    <barline location="left">
-    <ending number="2" type="start" />
+    <ending number="2" type="start"/>
    </barline>
    <harmony color="#000000" default-y="25">
     <root>
@@ -1157,7 +1157,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1170,7 +1170,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1183,7 +1183,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1197,7 +1197,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1210,7 +1210,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
@@ -1223,7 +1223,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1236,7 +1236,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1244,7 +1244,7 @@
     <beam number="1">end</beam>
    </note>
    <barline location="right">
-    <ending number="2" type="discontinue" />
+    <ending number="2" type="discontinue"/>
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 10 ==============-->
@@ -1259,11 +1259,11 @@
     </system-layout>
    </print>
    <attributes>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <barline location="left">
     <bar-style>heavy-light</bar-style>
-    <repeat direction="forward" />
+    <repeat direction="forward"/>
    </barline>
    <harmony color="#000000" default-y="25">
     <root>
@@ -1278,7 +1278,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1292,7 +1292,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1305,7 +1305,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1319,7 +1319,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1332,7 +1332,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1345,7 +1345,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1359,7 +1359,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1372,7 +1372,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1396,7 +1396,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1409,7 +1409,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1422,7 +1422,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1435,7 +1435,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1449,7 +1449,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1462,7 +1462,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1475,7 +1475,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1489,7 +1489,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1512,7 +1512,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1526,7 +1526,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1539,7 +1539,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1553,7 +1553,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1566,7 +1566,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1579,7 +1579,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1593,7 +1593,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1606,7 +1606,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1626,7 +1626,7 @@
     </system-layout>
    </print>
    <attributes>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <harmony color="#000000" default-y="25">
     <root>
@@ -1641,7 +1641,7 @@
      <octave>5</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>down</stem>
@@ -1653,7 +1653,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>down</stem>
@@ -1665,7 +1665,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
@@ -1677,7 +1677,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
@@ -1699,7 +1699,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1712,7 +1712,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1725,7 +1725,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1738,7 +1738,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1751,7 +1751,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1764,7 +1764,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1778,7 +1778,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1791,7 +1791,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1814,7 +1814,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1828,7 +1828,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1841,7 +1841,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1855,7 +1855,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1868,7 +1868,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
@@ -1880,7 +1880,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
@@ -1899,7 +1899,7 @@
     </system-layout>
    </print>
    <attributes>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <harmony color="#000000" default-y="25">
     <root>
@@ -1914,7 +1914,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1927,7 +1927,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1940,7 +1940,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1953,7 +1953,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1974,7 +1974,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1987,7 +1987,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -2000,7 +2000,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -2014,7 +2014,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -2025,7 +2025,7 @@
   <!--============== Part: P1, Measure: 17 ==============-->
   <measure number="17" width="330">
    <barline location="left">
-    <ending number="1" type="start" />
+    <ending number="1" type="start"/>
    </barline>
    <harmony color="#000000" default-y="25">
     <root>
@@ -2040,7 +2040,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -2053,7 +2053,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -2066,7 +2066,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -2080,7 +2080,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -2093,7 +2093,7 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
@@ -2106,7 +2106,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -2119,7 +2119,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -2128,14 +2128,14 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
-    <ending number="1" type="stop" />
-    <repeat direction="backward" />
+    <ending number="1" type="stop"/>
+    <repeat direction="backward"/>
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 18 ==============-->
   <measure number="18" width="298">
    <barline location="left">
-    <ending number="2" type="start" />
+    <ending number="2" type="start"/>
    </barline>
    <harmony color="#000000" default-y="25">
     <root>
@@ -2150,7 +2150,7 @@
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -2163,7 +2163,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -2176,7 +2176,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -2190,7 +2190,7 @@
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -2203,23 +2203,42 @@
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
-   <note default-x="228">
-    <rest />
-    <duration>256</duration>
-    <instrument id="P1-I1" />
+   <note color="#000000">
+    <pitch>
+     <step>B</step>
+     <octave>4</octave>
+    </pitch>
+    <duration>128</duration>
+    <instrument id="P1-I1"/>
     <voice>1</voice>
-    <type>quarter</type>
+    <type>eighth</type>
+    <stem>down</stem>
     <staff>1</staff>
+    <beam number="1">begin</beam>
    </note>
-   <barline location="right">
+   <note color="#000000">
+    <pitch>
+     <step>C</step>
+     <alter>1</alter>
+     <octave>5</octave>
+    </pitch>
+    <duration>128</duration>
+    <instrument id="P1-I1"/>
+    <voice>1</voice>
+    <type>eighth</type>
+    <stem>down</stem>
+    <staff>1</staff>
+    <beam number="1">end</beam>
+   </note>
+  <barline location="right">
     <bar-style>light-heavy</bar-style>
-    <ending number="2" type="discontinue" />
+    <ending number="2" type="discontinue"/>
    </barline>
   </measure>
  </part>

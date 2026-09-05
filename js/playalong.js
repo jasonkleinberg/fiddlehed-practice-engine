@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.21"; // attack-normalized sample set v2 (default) + ?samples=v1 A/B switch
+  const APP_VERSION = "1.22"; // pickup-inside-repeat convention (loop + sections) + 3 re-exported tunes + 4 pickup rewrites
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -277,6 +277,8 @@
     let beatsPerBar = 4, beatType = 4;
     let cursor = 0;             // global position in ticks
     let firstMeasureTicks = null; // duration of measure 1 (pickup detection)
+    let lastRepeatEndIdx = -1;    // playInstances index of the last :| bar
+    let lastRepeatEndTick = 0;
     let lastNoteOnset = 0;      // onset of the previous (non-chord) note
     const rawNotes = [];        // { tick, durTick, midi, tieStart, tieStop }
     const chords = [];          // { tick, rootStep, rootAlter, kind }
@@ -288,6 +290,8 @@
       const m = measures[mi];
       const measureStart = cursor;
       playInstances.push({ measureIdx: mi, startTick: measureStart });
+      if (m.querySelector(':scope > barline > repeat[direction="backward"]'))
+        lastRepeatEndIdx = playInstances.length - 1;   // v1.22, see below
       let measureMax = cursor;   // v1.19: furthest tick any voice reaches
       for (const el of [...m.children]) {
         switch (el.tagName) {
@@ -358,6 +362,7 @@
       // otherwise the next measure starts early (kesh-jig__17.09 bar 11 bug).
       cursor = Math.max(cursor, measureMax);
       if (firstMeasureTicks === null) firstMeasureTicks = cursor - measureStart;
+      if (lastRepeatEndIdx === playInstances.length - 1) lastRepeatEndTick = cursor;
     }
 
     if (!divisions) divisions = 256;
@@ -407,9 +412,19 @@
     const barBeats = barTicks / tpb;
     const firstNoteBeat = notes.length ? notes[0].tick / tpb : 0;
     let pickupBeats = 0, loopStartBeats = 0, bodyStartBeats = 0;
+    // v1.22: a THIRD convention — the pickup bar sits INSIDE the forward
+    // repeat (Peacock Rag, Coleraine, Southwind: `|: pickup | bars… | short
+    // closing bar :|`). Every pass already carries its own pickup and the
+    // closing bar is short by exactly the pickup, so the timeline is whole
+    // bars: loop the FULL length (no overlap trick) and let the A section
+    // start on its pickup instead of clipping it to the first downbeat.
+    let pickupInRepeat = false;
     if (firstMeasureTicks && firstMeasureTicks < barTicks) {
       pickupBeats = firstMeasureTicks / tpb;            // explicit
       bodyStartBeats = pickupBeats;
+      const m0 = measures[playOrder[0]];
+      pickupInRepeat = !![...m0.querySelectorAll(":scope > barline > repeat")]
+        .find((r) => r.getAttribute("direction") === "forward");
     } else if (firstNoteBeat > 0 && firstNoteBeat < barBeats) {
       pickupBeats = barBeats - firstNoteBeat;           // embedded
       loopStartBeats = firstNoteBeat;                   // skip the silent rests
@@ -437,10 +452,17 @@
       beatsPerBar,
       beatType,
       pickupBeats,
+      pickupInRepeat,
       loopStartBeats,
       bodyStartBeats,
       totalBeats,
-      loopBeats: totalBeats - pickupBeats,   // loop END (start = loopStartBeats)
+      // loop END (start = loopStartBeats): overlap trick unless the pickup
+      // already lives inside the repeat (then the timeline is whole bars).
+      // A written-out final bar AFTER the last :| (Peacock Rag's closing
+      // D) is an ending, not part of the form — the loop stops at the :|.
+      loopBeats: pickupInRepeat
+        ? (lastRepeatEndTick > 0 ? lastRepeatEndTick / tpb : totalBeats)
+        : totalBeats - pickupBeats,
       playInstances: playInstances.map((p) => ({
         measureIdx: p.measureIdx,
         startBeat: p.startTick / tpb,
@@ -751,7 +773,9 @@
       const names = ["A", "B", "C", "D", "E", "F"];
       let n = 0;
       for (const p of parts) {
-        const start = Math.max(p.start, bodyStart);   // pickup only in Full
+        // pickup only in Full — unless it's notated inside the repeat, in
+        // which case every pass owns it and the part loops on it (v1.22).
+        const start = s.pickupInRepeat ? p.start : Math.max(p.start, bodyStart);
         const end = (!p.hasVolta && p.passStartBeats.length > 1)
           ? p.passStartBeats[1] : p.end;
         // Skip stub "parts" (< 2 bars — usually a written-out ending bar
