@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding='UTF-8' standalone='no' ?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
 <score-partwise version="3.0">
  <work>
@@ -13,11 +13,11 @@ Adding double stops</work-title>
    <software>Sibelius 25.12.1</software>
    <software>Direct export, not from Dolet</software>
    <encoding-description>Sibelius / MusicXML 3.0</encoding-description>
-   <supports element="print" type="yes" value="yes" attribute="new-system" />
-   <supports element="print" type="yes" value="yes" attribute="new-page" />
-   <supports element="accidental" type="yes" />
-   <supports element="beam" type="yes" />
-   <supports element="stem" type="yes" />
+   <supports element="print" type="yes" value="yes" attribute="new-system"/>
+   <supports element="print" type="yes" value="yes" attribute="new-page"/>
+   <supports element="accidental" type="yes"/>
+   <supports element="beam" type="yes"/>
+   <supports element="stem" type="yes"/>
   </encoding>
  </identification>
  <defaults>
@@ -65,10 +65,10 @@ Adding double stops</work-title>
    <note-size type="cue">75</note-size>
    <note-size type="grace">60</note-size>
   </appearance>
-  <music-font font-family="Opus Std" font-size="19.8496" />
-  <word-font font-family="Times New Roman" font-size="11.9408" />
-  <lyric-font font-family="Plantin MT Std" font-size="11.4756" />
-  <lyric-language xml:lang="en" />
+  <music-font font-family="Opus Std" font-size="19.8496"/>
+  <word-font font-family="Times New Roman" font-size="11.9408"/>
+  <lyric-font font-family="Plantin MT Std" font-size="11.4756"/>
+  <lyric-language xml:lang="en"/>
  </defaults>
  <credit page="1">
   <credit-words default-x="616" default-y="155" font-family="Times New Roman" font-style="normal" font-size="22.0207" font-weight="normal" justify="center" valign="middle">Kesh Jig 
@@ -90,7 +90,7 @@ Adding double stops</credit-words>
    <score-instrument id="P1-I1">
     <instrument-name>Violin 1</instrument-name>
     <instrument-sound>strings.violin</instrument-sound>
-    <ensemble />
+    <ensemble/>
     <virtual-instrument>
      <virtual-library>General MIDI</virtual-library>
      <virtual-name>Violin ensemble</virtual-name>
@@ -125,7 +125,7 @@ Adding double stops</credit-words>
      <sign>G</sign>
      <line>2</line>
     </clef>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <harmony color="#000000" default-y="25">
     <root>
@@ -140,20 +140,20 @@ Adding double stops</credit-words>
      <octave>3</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <note color="#000000" default-x="92">
-    <chord />
+    <chord/>
     <pitch>
      <step>G</step>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>quarter</type>
     <staff>1</staff>
    </note>
@@ -163,20 +163,20 @@ Adding double stops</credit-words>
      <octave>3</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <note color="#000000" default-x="124">
-    <chord />
+    <chord/>
     <pitch>
      <step>G</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -186,7 +186,7 @@ Adding double stops</credit-words>
      <octave>3</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -194,13 +194,13 @@ Adding double stops</credit-words>
     <beam number="1">begin</beam>
    </note>
    <note color="#000000" default-x="157">
-    <chord />
+    <chord/>
     <pitch>
      <step>G</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -210,7 +210,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -218,13 +218,13 @@ Adding double stops</credit-words>
     <beam number="1">continue</beam>
    </note>
    <note color="#000000" default-x="181">
-    <chord />
+    <chord/>
     <pitch>
      <step>A</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -234,7 +234,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -242,13 +242,13 @@ Adding double stops</credit-words>
     <beam number="1">end</beam>
    </note>
    <note color="#000000" default-x="204">
-    <chord />
+    <chord/>
     <pitch>
      <step>B</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -268,20 +268,20 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <note color="#000000" default-x="15">
-    <chord />
+    <chord/>
     <pitch>
      <step>A</step>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>quarter</type>
     <staff>1</staff>
    </note>
@@ -291,20 +291,20 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <note color="#000000" default-x="45">
-    <chord />
+    <chord/>
     <pitch>
      <step>A</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -314,7 +314,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -322,13 +322,13 @@ Adding double stops</credit-words>
     <beam number="1">begin</beam>
    </note>
    <note color="#000000" default-x="74">
-    <chord />
+    <chord/>
     <pitch>
      <step>A</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -338,7 +338,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -346,13 +346,13 @@ Adding double stops</credit-words>
     <beam number="1">continue</beam>
    </note>
    <note color="#000000" default-x="97">
-    <chord />
+    <chord/>
     <pitch>
      <step>B</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -362,7 +362,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -370,13 +370,13 @@ Adding double stops</credit-words>
     <beam number="1">end</beam>
    </note>
    <note color="#000000" default-x="120">
-    <chord />
+    <chord/>
     <pitch>
      <step>D</step>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -396,7 +396,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -409,7 +409,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -422,7 +422,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -442,7 +442,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -455,7 +455,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -468,7 +468,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -491,7 +491,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -504,7 +504,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -517,7 +517,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -537,7 +537,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -550,7 +550,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -563,7 +563,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -586,20 +586,20 @@ Adding double stops</credit-words>
      <octave>3</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <note color="#000000" default-x="15">
-    <chord />
+    <chord/>
     <pitch>
      <step>G</step>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>quarter</type>
     <staff>1</staff>
    </note>
@@ -609,20 +609,20 @@ Adding double stops</credit-words>
      <octave>3</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <note color="#000000" default-x="47">
-    <chord />
+    <chord/>
     <pitch>
      <step>G</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -632,7 +632,7 @@ Adding double stops</credit-words>
      <octave>3</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -640,13 +640,13 @@ Adding double stops</credit-words>
     <beam number="1">begin</beam>
    </note>
    <note color="#000000" default-x="80">
-    <chord />
+    <chord/>
     <pitch>
      <step>G</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -656,7 +656,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -664,13 +664,13 @@ Adding double stops</credit-words>
     <beam number="1">continue</beam>
    </note>
    <note color="#000000" default-x="103">
-    <chord />
+    <chord/>
     <pitch>
      <step>A</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -680,7 +680,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -688,13 +688,13 @@ Adding double stops</credit-words>
     <beam number="1">end</beam>
    </note>
    <note color="#000000" default-x="126">
-    <chord />
+    <chord/>
     <pitch>
      <step>B</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -714,20 +714,20 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <note color="#000000" default-x="15">
-    <chord />
+    <chord/>
     <pitch>
      <step>A</step>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>quarter</type>
     <staff>1</staff>
    </note>
@@ -737,20 +737,20 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <note color="#000000" default-x="45">
-    <chord />
+    <chord/>
     <pitch>
      <step>A</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -760,7 +760,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -768,13 +768,13 @@ Adding double stops</credit-words>
     <beam number="1">begin</beam>
    </note>
    <note color="#000000" default-x="74">
-    <chord />
+    <chord/>
     <pitch>
      <step>A</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -784,7 +784,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -792,13 +792,13 @@ Adding double stops</credit-words>
     <beam number="1">continue</beam>
    </note>
    <note color="#000000" default-x="97">
-    <chord />
+    <chord/>
     <pitch>
      <step>B</step>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -808,7 +808,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -816,13 +816,13 @@ Adding double stops</credit-words>
     <beam number="1">end</beam>
    </note>
    <note color="#000000" default-x="120">
-    <chord />
+    <chord/>
     <pitch>
      <step>D</step>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <type>eighth</type>
     <staff>1</staff>
    </note>
@@ -839,7 +839,7 @@ Adding double stops</credit-words>
     </system-layout>
    </print>
    <attributes>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <harmony color="#000000" default-y="25">
     <root>
@@ -854,7 +854,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -867,7 +867,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -880,7 +880,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -900,7 +900,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -913,7 +913,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -926,7 +926,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -949,7 +949,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -962,7 +962,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -976,7 +976,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -996,23 +996,23 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>384</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
-    <dot />
+    <dot/>
     <stem>up</stem>
     <staff>1</staff>
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
-    <repeat direction="backward" />
+    <repeat direction="backward"/>
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 9 ==============-->
   <measure number="9" width="161">
    <barline location="left">
     <bar-style>heavy-light</bar-style>
-    <repeat direction="forward" />
+    <repeat direction="forward"/>
    </barline>
    <harmony color="#000000" default-y="25">
     <root>
@@ -1027,13 +1027,13 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
     <staff>1</staff>
     <notations>
-     <slur color="#000000" type="start" orientation="over" />
+     <slur color="#000000" type="start" orientation="over"/>
     </notations>
    </note>
    <note color="#000000" default-x="60" default-y="20">
@@ -1042,13 +1042,13 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
     <staff>1</staff>
     <notations>
-     <slur color="#000000" type="stop" orientation="over" />
+     <slur color="#000000" type="stop" orientation="over"/>
     </notations>
    </note>
    <note color="#000000" default-x="89" default-y="19">
@@ -1057,7 +1057,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1070,7 +1070,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1083,7 +1083,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1099,10 +1099,10 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>384</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>quarter</type>
-    <dot />
+    <dot/>
     <stem>down</stem>
     <staff>1</staff>
    </note>
@@ -1112,7 +1112,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1125,7 +1125,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1138,7 +1138,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1161,7 +1161,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1174,7 +1174,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1187,7 +1187,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1207,7 +1207,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1220,7 +1220,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1233,7 +1233,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1249,13 +1249,13 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
     <staff>1</staff>
     <notations>
-     <slur color="#000000" type="start" orientation="over" />
+     <slur color="#000000" type="start" orientation="over"/>
     </notations>
    </note>
    <note color="#000000" default-x="48" default-y="20">
@@ -1264,13 +1264,13 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
     <staff>1</staff>
     <notations>
-     <slur color="#000000" type="stop" orientation="over" />
+     <slur color="#000000" type="stop" orientation="over"/>
     </notations>
    </note>
    <note color="#000000" default-x="76" default-y="17">
@@ -1279,7 +1279,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1292,7 +1292,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1305,7 +1305,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1321,10 +1321,10 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>384</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>quarter</type>
-    <dot />
+    <dot/>
     <stem>down</stem>
     <staff>1</staff>
    </note>
@@ -1334,7 +1334,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1356,7 +1356,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1369,7 +1369,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1382,7 +1382,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1395,7 +1395,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1408,7 +1408,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1421,7 +1421,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1437,7 +1437,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1452,7 +1452,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1471,7 +1471,7 @@ Adding double stops</credit-words>
     </system-layout>
    </print>
    <attributes>
-    <staff-details number="1" print-object="yes" />
+    <staff-details number="1" print-object="yes"/>
    </attributes>
    <harmony color="#000000" default-y="25">
     <root>
@@ -1486,13 +1486,13 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>256</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
     <stem>up</stem>
     <staff>1</staff>
     <notations>
-     <slur color="#000000" type="start" orientation="over" />
+     <slur color="#000000" type="start" orientation="over"/>
     </notations>
    </note>
    <note color="#000000" default-x="128" default-y="20">
@@ -1501,13 +1501,13 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
     <staff>1</staff>
     <notations>
-     <slur color="#000000" type="stop" orientation="over" />
+     <slur color="#000000" type="stop" orientation="over"/>
     </notations>
    </note>
    <note color="#000000" default-x="166" default-y="19">
@@ -1516,7 +1516,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1529,7 +1529,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1542,7 +1542,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>up</stem>
@@ -1558,10 +1558,10 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>384</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>quarter</type>
-    <dot />
+    <dot/>
     <stem>down</stem>
     <staff>1</staff>
    </note>
@@ -1571,7 +1571,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>2</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1593,7 +1593,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1606,7 +1606,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1619,7 +1619,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1639,7 +1639,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1652,7 +1652,7 @@ Adding double stops</credit-words>
      <octave>4</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1665,7 +1665,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1688,7 +1688,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1702,7 +1702,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1715,7 +1715,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1735,7 +1735,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1748,7 +1748,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1761,7 +1761,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1784,7 +1784,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1797,7 +1797,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1811,7 +1811,7 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>128</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>eighth</type>
     <stem>down</stem>
@@ -1831,16 +1831,16 @@ Adding double stops</credit-words>
      <octave>5</octave>
     </pitch>
     <duration>384</duration>
-    <instrument id="P1-I1" />
+    <instrument id="P1-I1"/>
     <voice>1</voice>
     <type>quarter</type>
-    <dot />
+    <dot/>
     <stem>down</stem>
     <staff>1</staff>
    </note>
    <barline>
     <bar-style>light-heavy</bar-style>
-   </barline>
+   <repeat direction="backward"/></barline>
   </measure>
  </part>
 </score-partwise>

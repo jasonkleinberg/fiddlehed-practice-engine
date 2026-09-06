@@ -870,6 +870,21 @@
     "status": "playable"
   },
   {
+    "file": "kerry-polka__17.04.musicxml",
+    "title": "Kerry Polka – Adding Double Stops",
+    "slug": "kerry-polka__17.04",
+    "lesson_id": "17.04",
+    "module": 17,
+    "key": "G",
+    "timeSignature": "4/4",
+    "tempo": null,
+    "hasChords": true,
+    "videoLessonUrl": "https://fiddlehed.com/courses/intermediate-fiddle-lessons/2-7-adding-double-stops-to-tunes/kerry-polka-adding-double-stops/",
+    "genre": "irish,polka,technique,double_stops,play_along",
+    "difficulty": "",
+    "status": "playable"
+  },
+  {
     "file": "hava-negilah.musicxml",
     "title": "Hava Negilah",
     "slug": "hava-negilah",
