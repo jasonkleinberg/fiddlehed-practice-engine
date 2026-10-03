@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.23"; // analytics embed fix: GA cookie flags + own client_id when third-party cookies are blocked (beta recorded zero events)
+  const APP_VERSION = "1.24"; // organ voiced in a higher fixed window (G3-F#4, inversions) so it is less muddy; ?organ=old for A/B
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -493,9 +493,33 @@
     };
   }
 
-  // Build a triad (+7th for seventh chords) one octave below middle, organ range.
+  // v1.24 ORGAN REGISTER. Beta feedback (and Jason's ear): the organ was
+  // muddy. Cause: root-position triads built from octave 3 put close thirds
+  // as low as C3-E3, below where a third sounds clear. Fix: voice every chord
+  // inside ONE fixed 12-semitone window starting at ORGAN_LOW. Each chord tone
+  // lands exactly once in the window, so chords come out as inversions
+  // (D = A3 D4 F#4) -- about a fourth to a fifth higher on average, and the
+  // top voice barely moves between chords (smoother, less pumping).
+  // Raise/lower ORGAN_LOW by a semitone or two to taste. G3 = the fiddle's
+  // open G string: the organ sits just under most melodies, not on top of them.
+  // A/B check: add ?organ=old to the URL to hear the pre-1.24 voicing.
+  const ORGAN_LOW = 55; // MIDI G3
+  const ORGAN_OLD = PE_PARAMS.get("organ") === "old";
+  function voiceInWindow(midis) {
+    const v = midis
+      .map((m) => ORGAN_LOW + ((((m - ORGAN_LOW) % 12) + 12) % 12))
+      .sort((a, b) => a - b);
+    // Seventh chords can land with a whole step at the very bottom (A7 ->
+    // G3 A3 ...), which is its own kind of mud. Lift that bottom note an octave.
+    if (v.length > 3 && v[1] - v[0] <= 2) {
+      v.push(v.shift() + 12);
+    }
+    return v;
+  }
+
+  // Build a triad (+7th for seventh chords).
   function chordMidis(rootStep, rootAlter, kind) {
-    const root = pitchToMidi(rootStep, rootAlter, 3); // organ register
+    const root = pitchToMidi(rootStep, rootAlter, 3); // pitch class only matters now
     const k = (kind || "").toLowerCase();
     let iv;
     if (k.includes("dim")) iv = [0, 3, 6];
@@ -505,7 +529,8 @@
     if (k.includes("seventh") || k.includes("dominant") || k.includes("-7")) {
       iv = iv.concat(k.includes("major-seventh") ? 11 : 10);
     }
-    return iv.map((i) => root + i);
+    const rootPosition = iv.map((i) => root + i);
+    return ORGAN_OLD ? rootPosition : voiceInWindow(rootPosition);
   }
 
   function kindShort(kind) {
