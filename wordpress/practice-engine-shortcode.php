@@ -37,7 +37,7 @@ function fiddlehed_practice_engine_shortcode( $atts ) {
 		'practice-engine'
 	);
 
-	$base = 'https://jkleinberg.com/fiddlehed-practice-engine/';
+	$base = 'https://practice.fiddlehed.com/'; // moved 2026-10-03: same-site as fiddlehed.com so Safari allows analytics in the embed
 	$src  = $base;
 	if ( ! empty( $atts['tune'] ) ) {
 		// sanitize_title turns "Oh Susanna" or "oh-susanna" into a safe slug.
