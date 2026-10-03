@@ -40,7 +40,48 @@
       s.src = "https://www.googletagmanager.com/gtag/js?id=" + id;
       document.head.appendChild(s);
       gtag("js", new Date());
-      gtag("config", id);
+
+      // v1.23 — EMBED FIX. Inside the fiddlehed.com iframe this page is a
+      // THIRD-PARTY context. GA's default cookie (SameSite=Lax) can't be
+      // written there, and the Sept 2026 beta recorded ZERO events as a
+      // result. Two guards:
+      //  1. cookie_flags lets the cookie through where the browser allows
+      //     third-party cookies at all (Chrome).
+      //  2. Where it doesn't (Safari / iPad block them outright), hand GA a
+      //     client_id ourselves so hits still send: the tester tag if there
+      //     is one, else an id kept in localStorage, else a per-visit id.
+      var cfg = {};
+      var embedded = false;
+      try { embedded = window.self !== window.top; } catch (e) { embedded = true; }
+      if (embedded) {
+        cfg.cookie_flags = "SameSite=None;Secure";
+        var canCookie = false;
+        try {
+          document.cookie = "pe_ck=1; path=/; SameSite=None; Secure";
+          canCookie = document.cookie.indexOf("pe_ck=1") !== -1;
+        } catch (e) {}
+        if (!canCookie) {
+          var cid = null;
+          try {
+            var t = new URLSearchParams(location.search).get("t");
+            if (t) cid = "pe-t." + t;
+          } catch (e) {}
+          if (!cid) {
+            try {
+              cid = localStorage.getItem("pe_cid");
+              if (!cid) {
+                cid = "pe-" + Math.random().toString(36).slice(2) + "." + Date.now();
+                localStorage.setItem("pe_cid", cid);
+              }
+            } catch (e) {
+              cid = "pe-" + Math.random().toString(36).slice(2) + "." + Date.now();
+            }
+          }
+          cfg.client_id = cid;
+        }
+        console.log("[pe-analytics] embed mode — cookies " + (canCookie ? "ok" : "blocked, using own id"));
+      }
+      gtag("config", id, cfg);
     })();
   </script>
   <style>
@@ -378,6 +419,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.22"></script>
+  <script src="js/playalong.js?v=1.23"></script>
 </body>
 </html>

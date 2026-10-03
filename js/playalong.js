@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.22"; // pickup-inside-repeat convention (loop + sections) + 3 re-exported tunes + 4 pickup rewrites
+  const APP_VERSION = "1.23"; // analytics embed fix: GA cookie flags + own client_id when third-party cookies are blocked (beta recorded zero events)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
