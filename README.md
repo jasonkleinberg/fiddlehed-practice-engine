@@ -118,3 +118,7 @@ Every Claude Code session should start by reading this file and `PROJECT_LOG.md`
 3. Deploy to GitHub Pages
 4. Demo with students during an upcoming lesson — collect informal feedback
 5. Iterate from there
+
+## Sample credits
+
+Violin (`samples/violin*`) and acoustic guitar (`samples/guitar`) samples are from [nbrosowsky/tonejs-instruments](https://github.com/nbrosowsky/tonejs-instruments), licensed CC-BY 3.0. They have been trimmed and level-matched for this app.

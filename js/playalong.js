@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.25"; // search fix: search shows its own tappable list of matches instead of silently filtering the dropdown
+  const APP_VERSION = "1.26"; // guitar backing (sampled boom-chuck) + Organ/Guitar switch on the Chords layer
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -137,6 +137,8 @@
     melOut: $("melody-volume-readout"),
     orgVol: $("organ-volume"),
     orgOut: $("organ-volume-readout"),
+    backOrgan: $("backing-organ"),
+    backGuitar: $("backing-guitar"),
     kickVol: $("kick-volume"),
     kickOut: $("kick-volume-readout"),
     scoreWrap: $("score-wrap"),
@@ -487,6 +489,7 @@
       })),
       chords: chords.map((c) => ({
         beat: c.tick / tpb,
+        rootStep: c.rootStep, rootAlter: c.rootAlter, kind: c.kind,   // v1.26: guitar bass needs the real root
         midis: chordMidis(c.rootStep, c.rootAlter, c.kind),
         label: c.rootStep + (c.rootAlter > 0 ? "#" : c.rootAlter < 0 ? "b" : "")
           + kindShort(c.kind),
@@ -566,6 +569,10 @@
     score: null,
     sampler: null,
     organ: null,
+    guitar: null,        // v1.26: sampled acoustic guitar (lazy-loaded)
+    guitarReady: false,
+    backing: "organ",    // which chord sound plays: "organ" | "guitar"
+    guitarPart: null,
     kick: null,
     melodyGain: null,
     organGain: null,
@@ -581,6 +588,122 @@
     scoreHidden: false, // v1.12 memorization toggle: sheet music hidden
     scoreDirty: false,  // tune changed (or resized) while hidden → re-render on show
   };
+
+  // =========================================================================
+  // v1.26 GUITAR BACKING. Beta testers kept comparing the app to Strum
+  // Machine and said the organ "didn't feel right for fiddle tunes". Jason's
+  // call: KEEP the organ, ADD a rhythm guitar, let the student switch.
+  //   Sound : real acoustic-guitar samples (tonejs-instruments, CC-BY 3.0 --
+  //           same source as the violin), trimmed so every note starts 4 ms
+  //           in. Self-hosted in samples/guitar/.
+  //   Rhythm: boom-chuck. Bass note on the beat, short chord strum off it.
+  //           4/4, 2/4, 2/2 : boom chuck boom chuck (bass alternates root / fifth)
+  //           3/4           : boom chuck chuck
+  //           6/8, 9/8, 12/8: boom . chuck per dotted-quarter pulse (jig backup)
+  //   Loads lazily: nobody downloads 2.5 MB of guitar unless they pick guitar.
+  //   Both parts are always scheduled; the callbacks check engine.backing, so
+  //   the switch is instant even mid-tune.
+  // =========================================================================
+  const GUITAR_BASE = "samples/guitar/";
+  const GUITAR_URLS = {
+    E2: "E2.wav", G2: "G2.wav", A2: "A2.wav", C3: "C3.wav", D3: "D3.wav",
+    F3: "F3.wav", G3: "G3.wav", A3: "A3.wav", B3: "B3.wav", D4: "D4.wav",
+    E4: "E4.wav", G4: "G4.wav", A4: "A4.wav", C5: "C5.wav",
+  };
+  const GUITAR_BASS_LOW = 40;      // MIDI E2, the guitar's low E string
+  const GUITAR_STRUM_GAP = 0.012;  // seconds between strings in a strum
+  const midiNote = (m) => Tone.Frequency(m, "midi").toNote();
+
+  function ensureGuitar() {
+    if (engine.guitar || typeof Tone === "undefined" || !engine.organGain) return;
+    setStatus("Loading guitar…");
+    engine.guitar = new Tone.Sampler({
+      urls: GUITAR_URLS,
+      baseUrl: GUITAR_BASE,
+      release: 0.25,
+      onload: () => {
+        engine.guitarReady = true;
+        if (engine.ready) {
+          setStatus(Tone.Transport.state === "started" ? "Playing." : "Ready. Press Play.");
+        }
+      },
+    }).connect(engine.organGain);   // shares the "Chords" volume slider
+    engine.guitar.volume.value = -3;
+  }
+
+  // Turn a tune's chord list into boom-chuck events (beats = quarter notes).
+  function guitarEvents(s) {
+    if (!s.chords.length) return [];
+    const barBeats = s.beatsPerBar * (4 / s.beatType);
+    const compound = s.beatType === 8 && s.beatsPerBar % 3 === 0;
+    const waltz = !compound && s.beatsPerBar === 3;
+    const chordAt = (beat) => {
+      let hit = null;
+      for (const c of s.chords) { if (c.beat <= beat + 1e-6) hit = c; else break; }
+      return hit;
+    };
+    const fifthOf = (kind) => {
+      const k = (kind || "").toLowerCase();
+      return k.includes("dim") ? 6 : k.includes("aug") ? 8 : 7;
+    };
+    const events = [];
+    let lastChord = null, boomCount = 0;
+    const boom = (beat) => {
+      const c = chordAt(beat);
+      if (!c) return;
+      if (c !== lastChord) { lastChord = c; boomCount = 0; }   // new chord starts on its root
+      // Root pitch class comes from the chord record, not the voiced organ notes.
+      const rootPc = ((pitchToMidi(c.rootStep, c.rootAlter, 3) % 12) + 12) % 12;
+      const root = GUITAR_BASS_LOW + ((rootPc - (GUITAR_BASS_LOW % 12) + 12) % 12);
+      let note = root;
+      if (boomCount % 2 === 1) {
+        const up = root + fifthOf(c.kind);
+        note = up <= GUITAR_BASS_LOW + 12 ? up : up - 12;   // keep the bass on the low strings
+      }
+      boomCount++;
+      events.push({ beat, type: "boom", notes: [note] });
+    };
+    const chuck = (beat) => {
+      const c = chordAt(beat);
+      if (!c) return;
+      const notes = c.midis.slice();
+      notes.push(notes[0] + 12);          // one more string on top for a fuller strum
+      events.push({ beat, type: "chuck", notes });
+    };
+    for (let bar = s.bodyStartBeats; bar < s.totalBeats - 1e-6; bar += barBeats) {
+      if (compound) {
+        for (let p = 0; p < barBeats - 1e-6; p += 1.5) { boom(bar + p); chuck(bar + p + 1); }
+      } else if (waltz) {
+        boom(bar); chuck(bar + 1); chuck(bar + 2);
+      } else {
+        const slots = Math.round(barBeats);
+        for (let q = 0; q < slots; q++) (q % 2 === 0 ? boom : chuck)(bar + q);
+      }
+    }
+    return events.filter((e) => e.beat < s.totalBeats - 1e-6);
+  }
+
+  function setBacking(which, fromUser) {
+    engine.backing = which === "guitar" ? "guitar" : "organ";
+    PE_CONTEXT.backing = engine.backing;
+    if (els.backOrgan && els.backGuitar) {
+      const g = engine.backing === "guitar";
+      els.backGuitar.classList.toggle("active", g);
+      els.backOrgan.classList.toggle("active", !g);
+      els.backGuitar.setAttribute("aria-pressed", String(g));
+      els.backOrgan.setAttribute("aria-pressed", String(!g));
+    }
+    if (engine.backing === "guitar") {
+      ensureGuitar();
+      if (engine.organ && engine.organ.releaseAll) engine.organ.releaseAll();   // cut the held organ chord
+    } else if (engine.guitar && engine.guitar.releaseAll) {
+      engine.guitar.releaseAll();
+    }
+    if (fromUser) {
+      try { localStorage.setItem("pe_backing", engine.backing); } catch (_) {}
+      track("pe_backing_set", { backing: engine.backing });
+    }
+  }
 
   function buildInstruments() {
     // Extra scheduling headroom: melody notes trigger up to ~180ms EARLY to
@@ -717,11 +840,26 @@
       return { ...c, durBeats: Math.max(0.1, endBeat - c.beat) };
     });
     engine.organPart = new Tone.Part((time, ev) => {
+      if (engine.backing !== "organ") return;
       const dur = ev.durBeats * (60 / Tone.Transport.bpm.value);
       const names = ev.midis.map((m) => Tone.Frequency(m, "midi").toNote());
       engine.organ.triggerAttackRelease(names, dur, time);
     }, chordEvents.map((c) => [beatToBBS(c.beat), c]));
     engine.organPart.start(0);
+
+    // Guitar — boom-chuck from the same chords (v1.26). Silent unless the
+    // student has switched the chord sound to guitar and the samples are in.
+    engine.guitarPart = new Tone.Part((time, ev) => {
+      if (engine.backing !== "guitar" || !engine.guitarReady) return;
+      if (ev.type === "boom") {
+        engine.guitar.triggerAttackRelease(midiNote(ev.notes[0]), 0.5, time, 0.9);
+      } else {
+        ev.notes.forEach((m, i) =>
+          engine.guitar.triggerAttackRelease(
+            midiNote(m), 0.22, time + i * GUITAR_STRUM_GAP, 0.55));
+      }
+    }, guitarEvents(s).map((e) => [beatToBBS(e.beat), e]));
+    engine.guitarPart.start(0);
 
     // Kick — one hit per PULSE, loops with the Transport. In simple meters
     // (4/4, 3/4, 2/4) the pulse is the quarter note. In compound meters
@@ -748,6 +886,7 @@
   function clearSchedule() {
     if (engine.melodyPart) { engine.melodyPart.dispose(); engine.melodyPart = null; }
     if (engine.organPart) { engine.organPart.dispose(); engine.organPart = null; }
+    if (engine.guitarPart) { engine.guitarPart.dispose(); engine.guitarPart = null; }
     if (engine.kickEventId !== null) {
       Tone.Transport.clear(engine.kickEventId);
       engine.kickEventId = null;
@@ -755,6 +894,7 @@
     // Kill anything still sounding (held organ chord, ringing melody note).
     if (engine.sampler && engine.sampler.releaseAll) engine.sampler.releaseAll();
     if (engine.organ && engine.organ.releaseAll) engine.organ.releaseAll();
+    if (engine.guitar && engine.guitar.releaseAll) engine.guitar.releaseAll();
   }
 
   // =========================================================================
@@ -1522,6 +1662,12 @@
     vol(els.melVol, els.melOut, () => engine.melodyGain, "melody");
     vol(els.orgVol, els.orgOut, () => engine.organGain, "organ");
     vol(els.kickVol, els.kickOut, () => engine.kickGain, "kick");
+
+    // Chord sound: organ or guitar (v1.26).
+    if (els.backOrgan && els.backGuitar) {
+      els.backOrgan.addEventListener("click", () => setBacking("organ", true));
+      els.backGuitar.addEventListener("click", () => setBacking("guitar", true));
+    }
   }
 
   // =========================================================================
@@ -1574,6 +1720,14 @@
       buildSelector();
 
       buildInstruments();
+
+      // Opening chord sound: ?backing=guitar in the URL wins, then whatever
+      // this student picked last time, then organ.
+      let startBacking = PE_PARAMS.get("backing");
+      if (!startBacking) {
+        try { startBacking = localStorage.getItem("pe_backing"); } catch (_) {}
+      }
+      setBacking(startBacking === "guitar" ? "guitar" : "organ", false);
 
       // ?tune=<slug> (the WP-embed pattern) picks the opening tune;
       // otherwise the first tune in course order.

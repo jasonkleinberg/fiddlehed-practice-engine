@@ -247,6 +247,20 @@
       background: var(--fh-red); border-color: var(--fh-red); color: var(--fh-cream);
     }
 
+    /* ---- Chord sound switch: Organ | Guitar (v1.26) ---- */
+    .backing-toggle { display: flex; gap: 0.4rem; margin: 0.15rem 0 0.4rem; }
+    .backing-toggle button {
+      padding: 0.3rem 0.8rem; font-size: 0.9rem; cursor: pointer; min-height: 36px;
+      font-family: 'Karla', sans-serif; font-weight: 700;
+      border: 1.5px solid var(--fh-ink); border-radius: 6px;
+      background: var(--fh-paper); color: var(--fh-ink);
+      transition: all 0.15s ease;
+    }
+    .backing-toggle button:hover { border-color: var(--fh-red); color: var(--fh-red); }
+    .backing-toggle button.active {
+      background: var(--fh-red); border-color: var(--fh-red); color: var(--fh-cream);
+    }
+
     /* ---- Sliders ---- */
     .slider { margin: 1rem 0; }
     .slider label {
@@ -405,7 +419,11 @@
         </div>
 
         <div class="slider">
-          <label for="organ-volume"><span class="track-name">Organ (chords)</span><span id="organ-volume-readout">30%</span></label>
+          <label for="organ-volume"><span class="track-name">Chords</span><span id="organ-volume-readout">30%</span></label>
+          <div class="backing-toggle" role="group" aria-label="Chord sound">
+            <button type="button" id="backing-organ" class="active" aria-pressed="true">Organ</button>
+            <button type="button" id="backing-guitar" aria-pressed="false">Guitar</button>
+          </div>
           <input type="range" id="organ-volume" min="0" max="100" value="30" step="1" />
         </div>
 
@@ -433,6 +451,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.25"></script>
+  <script src="js/playalong.js?v=1.26"></script>
 </body>
 </html>
