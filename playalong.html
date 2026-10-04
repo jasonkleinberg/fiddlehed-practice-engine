@@ -181,6 +181,19 @@
       font-family: 'Karla', sans-serif; color: var(--fh-ink);
       border: 1.5px solid var(--fh-ink); border-radius: 6px; background: var(--fh-paper);
     }
+    /* v1.25: search matches, listed right under the search box */
+    .tune-results { margin: -0.5rem 0 1rem; display: flex; flex-direction: column; gap: 4px; }
+    .tune-results[hidden] { display: none; }
+    .tune-result {
+      text-align: left; width: 100%; min-height: 44px; padding: 0.55rem 0.7rem;
+      font-family: 'Karla', sans-serif; font-size: 0.95rem; color: var(--fh-ink);
+      background: var(--fh-paper); border: 1.5px solid var(--fh-line); border-radius: 6px;
+      cursor: pointer;
+    }
+    .tune-result:hover, .tune-result:focus {
+      outline: none; border-color: var(--fh-red); background: #fff;
+    }
+    .tune-results-note { margin: 2px 0 0; font-size: 0.85rem; color: var(--fh-gray); }
     .picker input[type="text"]:focus, .picker select:focus {
       outline: none; border-color: var(--fh-red);
       box-shadow: 0 0 0 2px rgba(153, 0, 52, 0.15);
@@ -370,6 +383,7 @@
         <input type="text" id="tune-search" placeholder="Search tunes…" aria-label="Search tunes" />
         <select id="tune-select" aria-label="Choose a tune"></select>
       </div>
+      <div id="tune-results" class="tune-results" aria-live="polite" hidden></div>
 
       <div class="controls">
         <button id="play" disabled>Play</button>
@@ -419,6 +433,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.24"></script>
+  <script src="js/playalong.js?v=1.25"></script>
 </body>
 </html>

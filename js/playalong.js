@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.24"; // organ voiced in a higher fixed window (G3-F#4, inversions) so it is less muddy; ?organ=old for A/B
+  const APP_VERSION = "1.25"; // search fix: search shows its own tappable list of matches instead of silently filtering the dropdown
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -125,6 +125,7 @@
     lessonLink: $("lesson-link"),
     sections: $("sections"),
     tuneSearch: $("tune-search"),
+    tuneResults: $("tune-results"),
     tuneSelect: $("tune-select"),
     status: $("status"),
     play: $("play"),
@@ -1291,14 +1292,18 @@
 
   const tuneLabel = (r) => `${r.lesson_id} · ${r.title} (${r.key})`;
 
-  // (Re)populate the <select>, optionally filtered, grouped by module.
-  function buildSelector(filter) {
-    const q = (filter || "").trim().toLowerCase();
+  // v1.25 SEARCH FIX. Until now the search box FILTERED the dropdown. When the
+  // loaded tune was filtered out, the dropdown silently showed the first match
+  // as if it were selected -- but nothing loaded, and picking that same match
+  // fired no "change" event, so it never loaded either. Two beta testers hit
+  // this ("search doesn't work if you're already on another tune").
+  // Now: the dropdown ALWAYS holds the full library (for browsing), and the
+  // search box shows its own list of matches right under it. Tap a match (or
+  // press Enter for the top one) and it loads.
+  function buildSelector() {
     els.tuneSelect.innerHTML = "";
     let group = null, groupModule = null;
     for (const r of engine.tunes) {
-      if (q && !`${r.title} ${r.lesson_id} ${r.key}`.toLowerCase().includes(q))
-        continue;
       if (r.module !== groupModule) {
         group = document.createElement("optgroup");
         group.label = `Module ${r.module}`;
@@ -1310,10 +1315,69 @@
       opt.textContent = tuneLabel(r);
       group.appendChild(opt);
     }
-    // Keep the loaded tune selected if it survived the filter.
     const cur = engine.current && engine.current.slug;
-    if (cur && [...els.tuneSelect.options].some((o) => o.value === cur))
-      els.tuneSelect.value = cur;
+    if (cur) els.tuneSelect.value = cur;
+  }
+
+  // Forgiving match: case and punctuation don't matter ("bile em" finds
+  // "Bile 'em Cabbage Down"). Every word typed must START a word in the
+  // title or key. A lesson number ("1.13", "13.") matches lesson numbers only,
+  // so "1.13" doesn't also drag in 13.02.
+  const searchNorm = (str) =>
+    String(str).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  function searchTunes(query) {
+    const raw = String(query).trim();
+    if (/^\d+\.\d*$/.test(raw)) {
+      return engine.tunes.filter((r) => String(r.lesson_id).startsWith(raw));
+    }
+    const words = searchNorm(raw).split(" ").filter(Boolean);
+    if (!words.length) return [];
+    return engine.tunes.filter((r) => {
+      const hay = searchNorm(`${r.title} ${r.key} ${r.lesson_id}`).split(" ");
+      return words.every((w) => hay.some((h) => h.startsWith(w)));
+    });
+  }
+
+  const SEARCH_MAX_SHOWN = 8;
+  let searchMatches = [];
+  function renderSearchResults() {
+    const box = els.tuneResults;
+    const q = els.tuneSearch.value;
+    box.innerHTML = "";
+    searchMatches = searchTunes(q);
+    if (!searchNorm(q)) { box.hidden = true; return; }
+    box.hidden = false;
+    if (!searchMatches.length) {
+      const none = document.createElement("p");
+      none.className = "tune-results-note";
+      none.textContent = "No tunes match. Try fewer letters.";
+      box.appendChild(none);
+      return;
+    }
+    searchMatches.slice(0, SEARCH_MAX_SHOWN).forEach((r) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "tune-result";
+      const isCurrent = engine.current && engine.current.slug === r.slug;
+      b.textContent = tuneLabel(r) + (isCurrent ? "  (loaded now)" : "");
+      b.addEventListener("click", () => pickSearchResult(r));
+      box.appendChild(b);
+    });
+    if (searchMatches.length > SEARCH_MAX_SHOWN) {
+      const more = document.createElement("p");
+      more.className = "tune-results-note";
+      more.textContent =
+        `+${searchMatches.length - SEARCH_MAX_SHOWN} more. Keep typing to narrow it down.`;
+      box.appendChild(more);
+    }
+  }
+
+  function pickSearchResult(rec) {
+    els.tuneSearch.value = "";
+    renderSearchResults();
+    els.tuneSearch.blur();          // drops the iPad keyboard
+    track("pe_search_pick", { tune: rec.slug });
+    if (rec !== engine.current) loadTune(rec);
   }
 
   // Load a tune record: fetch + parse its XML, reset tempo, reschedule.
@@ -1471,13 +1535,21 @@
     els.pause.addEventListener("click", onPause);
     els.stop.addEventListener("click", onStop);
 
-    // Tune picker: dropdown loads the tune; search box filters the dropdown.
+    // Tune picker: dropdown browses the full library; search box lists matches.
     els.tuneSelect.addEventListener("change", () => {
       const rec = engine.tunes.find((t) => t.slug === els.tuneSelect.value);
       if (rec && rec !== engine.current) loadTune(rec);
     });
-    els.tuneSearch.addEventListener("input", () =>
-      buildSelector(els.tuneSearch.value));
+    els.tuneSearch.addEventListener("input", renderSearchResults);
+    els.tuneSearch.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && searchMatches.length) {
+        e.preventDefault();
+        pickSearchResult(searchMatches[0]);
+      } else if (e.key === "Escape") {
+        els.tuneSearch.value = "";
+        renderSearchResults();
+      }
+    });
 
     // Spacebar = play/pause (ignored while typing in a control).
     document.addEventListener("keydown", (e) => {
@@ -1499,7 +1571,7 @@
       setStatus("Loading tune library…");
       const idx = await (await fetch(bust(INDEX_FILE))).json();
       engine.tunes = idx.slice().sort(byCourseOrder);
-      buildSelector("");
+      buildSelector();
 
       buildInstruments();
 
