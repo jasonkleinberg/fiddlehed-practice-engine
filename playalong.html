@@ -353,6 +353,12 @@
       fill: #990034 !important;
       stroke: #990034 !important;
     }
+    /* v1.27: very light band behind the bar that is playing right now */
+    .pe-bar-now {
+      fill: #888;
+      opacity: 0.16;
+      pointer-events: none;
+    }
     /* Gray band behind the bars of the active loop section */
     .pe-section-shade {
       fill: #888;
@@ -451,6 +457,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.26"></script>
+  <script src="js/playalong.js?v=1.27"></script>
 </body>
 </html>

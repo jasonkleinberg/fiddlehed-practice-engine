@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.26"; // guitar backing (sampled boom-chuck) + Organ/Guitar switch on the Chords layer
+  const APP_VERSION = "1.27"; // light gray band behind the bar that is playing, to make the music easier to follow
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -1270,6 +1270,47 @@
     }
   }
 
+  // CURRENT-BAR BAND (v1.27): a very light gray band behind the bar that is
+  // playing right now, so the eye has a bar-sized target to follow instead of
+  // chasing single red notes (beta: "difficulty following the notes"). One
+  // rect, moved from bar to bar. Sits above the section shade, under the music.
+  let barNowRect = null, barNowIdx = -1;
+  function updateBarNow(pos) {
+    const osmd = engine.osmd;
+    const svg = document.querySelector("#score svg");
+    if (!osmd || !svg || !osmd.GraphicSheet || !engine.score) return;
+    const plays = engine.score.playInstances || [];
+    let idx = -1;
+    for (const p of plays) {
+      if (p.startBeat <= pos + 1e-6) idx = p.measureIdx; else break;
+    }
+    // A re-render replaces the SVG, which orphans our rect: rebuild it.
+    const orphaned = !barNowRect || barNowRect.ownerSVGElement !== svg;
+    if (idx === barNowIdx && !orphaned) return;
+    barNowIdx = idx;
+    if (orphaned) {
+      if (barNowRect) barNowRect.remove();
+      barNowRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      barNowRect.setAttribute("class", "pe-bar-now");
+      const shades = svg.querySelectorAll(".pe-section-shade");
+      const after = shades.length ? shades[shades.length - 1].nextSibling : svg.firstChild;
+      svg.insertBefore(barNowRect, after);
+    }
+    let bb = null;
+    for (const gm of (osmd.GraphicSheet.MeasureList[idx] || [])) {
+      if (!gm || !gm.PositionAndShape) continue;
+      const inst = gm.ParentStaff && gm.ParentStaff.ParentInstrument;
+      if (inst && inst.Visible === false) continue;
+      bb = gm.PositionAndShape; break;
+    }
+    if (!bb) { barNowRect.setAttribute("width", 0); return; }
+    const u = 10 * (osmd.zoom || 1);
+    barNowRect.setAttribute("x", bb.AbsolutePosition.x * u);
+    barNowRect.setAttribute("y", (bb.AbsolutePosition.y - 1.5) * u);
+    barNowRect.setAttribute("width", bb.Size.width * u);
+    barNowRect.setAttribute("height", 7 * u);
+  }
+
   // Click-to-seek. If the target beat is outside the active loop section,
   // fall back to the section that contains it (preferring the current one,
   // else the tightest match, else Full) so the Transport doesn't sail past
@@ -1313,6 +1354,8 @@
     if (Tone.Transport.state === "started") {
       pos -= window.__hlDelay * (Tone.Transport.bpm.value / 60);
     }
+
+    try { updateBarNow(pos); } catch (_) { /* a band must never break playback */ }
 
     const active = [];
     for (const e of engine.noteMap) {
