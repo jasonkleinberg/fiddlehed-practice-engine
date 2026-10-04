@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.28"; // highlight timing fix: it ran ~0.25s ahead of the sound (read the scheduler position, not the audible one)
+  const APP_VERSION = "1.30"; // ?hldebug=1 shows an on-screen timing readout (to find why Safari's highlight runs early)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -829,6 +829,13 @@
       else if (ev.artic === "diff") gap = Math.min(window.__gapDiff, full * 0.2);
       const dur = Math.max(0.05, full - gap);
       const when = Math.max(time - melodyLeadFor(ev.midi), Tone.now());
+      if (window.__peDbg) {                       // ?hldebug=1 only
+        const d = window.__peDbg;
+        d.late.push(when - time); if (d.late.length > 24) d.late.shift();
+        const t = performance.now();
+        if (d.lastCb) { d.gaps.push(t - d.lastCb); if (d.gaps.length > 24) d.gaps.shift(); }
+        d.lastCb = t;
+      }
       engine.sampler.triggerAttackRelease(
         Tone.Frequency(ev.midi, "midi").toNote(), dur, when);
     }, melodyEvents);
@@ -1352,7 +1359,25 @@
     // highlight still leads (Bluetooth headphones ~0.2), lower toward 0 if
     // it trails. Stopped / seeking still uses the instant position.
     const playing = Tone.Transport.state === "started";
-    window.__hlDelay = window.__hlDelay ?? 0.03;
+    // v1.29: the remaining gap is the DEVICE's audio delay, which Safari does
+    // not report (and Bluetooth adds 0.15-0.3 s). So the trim can be set from
+    // the URL -- ?hl=0.25 means "show the highlight 0.25 s later" -- and is
+    // remembered on that device. Negative values move it earlier.
+    if (window.__hlDelay === undefined) {
+      let saved = null;
+      const fromUrl = parseFloat(PE_PARAMS.get("hl"));
+      if (!isNaN(fromUrl)) {
+        saved = Math.max(-0.2, Math.min(0.6, fromUrl));
+        try { localStorage.setItem("pe_hl", String(saved)); } catch (_) {}
+      } else {
+        try {
+          const v = parseFloat(localStorage.getItem("pe_hl"));
+          if (!isNaN(v)) saved = v;
+        } catch (_) {}
+      }
+      window.__hlDelay = saved !== null ? saved : 0.03;
+      console.log("[playalong] highlight trim", window.__hlDelay, "s");
+    }
     let ticks;
     if (playing) {
       const raw = Tone.context.rawContext || {};
@@ -1367,6 +1392,7 @@
     const pos = ticks / Tone.Transport.PPQ;             // quarter-note beats
 
     try { updateBarNow(pos); } catch (_) { /* a band must never break playback */ }
+    if (window.__peDbg) { try { paintHlDebug(pos); } catch (_) {} }
 
     const active = [];
     for (const e of engine.noteMap) {
@@ -1385,6 +1411,45 @@
     engine.activeEls = els2;
 
     autoScroll(els2[0]);
+  }
+
+  // ?hldebug=1 — on-screen timing readout. Diagnostic only; changes nothing.
+  if (PE_PARAMS.get("hldebug")) window.__peDbg = { late: [], gaps: [], lastCb: 0, lastPaint: 0 };
+  function paintHlDebug(pos) {
+    const d = window.__peDbg, t = performance.now();
+    if (t - d.lastPaint < 250) return;
+    d.lastPaint = t;
+    if (!d.el) {
+      d.el = document.createElement("pre");
+      d.el.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:99999;margin:0;" +
+        "padding:8px 10px;background:#111;color:#0f0;font:12px/1.35 Menlo,monospace;" +
+        "border-radius:6px;opacity:.92;pointer-events:none;white-space:pre";
+      document.body.appendChild(d.el);
+    }
+    const raw = Tone.context.rawContext || {};
+    const n = raw._nativeAudioContext || raw._nativeContext || raw;
+    const f = (x) => (typeof x === "number" && isFinite(x)) ? x.toFixed(3) : String(x);
+    const avg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
+    const max = (a) => a.length ? Math.max.apply(null, a) : NaN;
+    let ots = "n/a";
+    try {
+      const o = (n.getOutputTimestamp || raw.getOutputTimestamp).call(n.getOutputTimestamp ? n : raw);
+      const heard = o.contextTime + (performance.now() - o.performanceTime) / 1000;
+      ots = f(Tone.immediate() - heard) + " (ctx " + f(o.contextTime) + ")";
+    } catch (_) {}
+    const bpm = Tone.Transport.bpm.value;
+    d.el.textContent = [
+      "PE v" + APP_VERSION + "  " + (/Chrome/.test(navigator.userAgent) ? "Chrome" :
+        /Safari/.test(navigator.userAgent) ? "Safari" : "other") + (window.top !== window ? "  embedded" : ""),
+      "bpm " + f(bpm) + "  beat " + f(pos),
+      "lookAhead " + f(Tone.context.lookAhead) + "  now-imm " + f(Tone.now() - Tone.immediate()),
+      "baseLat " + f(raw.baseLatency) + "  outLat " + f(raw.outputLatency),
+      "clock-vs-heard " + ots,
+      "rate " + raw.sampleRate + "  state " + raw.state,
+      "note late avg " + f(avg(d.late)) + " max " + f(max(d.late)),
+      "note cb gap ms avg " + f(avg(d.gaps)),
+      "trim " + f(window.__hlDelay),
+    ].join("\n");
   }
 
   function sameEls(a, b) {
