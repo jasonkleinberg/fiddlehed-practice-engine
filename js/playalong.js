@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.27"; // light gray band behind the bar that is playing, to make the music easier to follow
+  const APP_VERSION = "1.28"; // highlight timing fix: it ran ~0.25s ahead of the sound (read the scheduler position, not the audible one)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -1337,23 +1337,34 @@
   let lastPaintedTicks = -1;
   function updateHighlight(force) {
     if (!engine.noteMap.length) return;
-    const ticks = Tone.Transport.ticks;
+    // v1.28 FIX — the highlight was ~0.25 s EARLY (a full note at brisk tempos).
+    // Cause: Tone.Transport.ticks reports the position at "now + lookAhead",
+    // i.e. where the SCHEDULER is, not what the ear is hearing. That was
+    // harmless at Tone's default lookAhead (0.1 s, and v1.4's 0.12 s visual
+    // delay was tuned against it). v1.19 raised lookAhead to 0.35 s so the
+    // melody could be triggered early enough -- and silently pushed the
+    // highlight a quarter-second ahead of the sound. Nobody saw it until the
+    // v1.27 bar band made "which bar are we in" obvious.
+    // Now: while playing, ask the Transport where it was at the moment that
+    // is AUDIBLE right now = the audio clock without lookAhead, minus the
+    // device's output latency. Independent of lookAhead from here on.
+    // window.__hlDelay (seconds) is now only a fine trim: raise it if the
+    // highlight still leads (Bluetooth headphones ~0.2), lower toward 0 if
+    // it trails. Stopped / seeking still uses the instant position.
+    const playing = Tone.Transport.state === "started";
+    window.__hlDelay = window.__hlDelay ?? 0.03;
+    let ticks;
+    if (playing) {
+      const raw = Tone.context.rawContext || {};
+      const outLat = raw.outputLatency || raw.baseLatency || 0;
+      const audibleAt = Tone.immediate() - outLat - window.__hlDelay;
+      ticks = Tone.Transport.getTicksAtTime(Math.max(0, audibleAt));
+    } else {
+      ticks = Tone.Transport.ticks;
+    }
     if (!force && ticks === lastPaintedTicks) return;   // nothing moved
     lastPaintedTicks = ticks;
-    let pos = ticks / Tone.Transport.PPQ;               // quarter-note beats
-
-    // VISUAL DELAY (v1.4, Jason's 7/7 feedback): the highlight tracked the
-    // SCHEDULED beat, but the heard note lands later — audio output latency
-    // (tens of ms; much more on Bluetooth) plus the violin samples' soft bow
-    // attack. Eye beat ear → felt "ahead." Shift the highlight back by a
-    // wall-clock offset, converted to beats at the live tempo. Only while
-    // playing — seeks and stopped-state clicks stay instant.
-    // Live-tunable: window.__hlDelay (seconds). Raise if the highlight still
-    // leads the sound (Bluetooth ≈ 0.25–0.35), lower toward 0 if it trails.
-    window.__hlDelay = window.__hlDelay ?? 0.12;
-    if (Tone.Transport.state === "started") {
-      pos -= window.__hlDelay * (Tone.Transport.bpm.value / 60);
-    }
+    const pos = ticks / Tone.Transport.PPQ;             // quarter-note beats
 
     try { updateBarNow(pos); } catch (_) { /* a band must never break playback */ }
 
