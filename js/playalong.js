@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.32"; // Safari: if the browser reports its sound is running behind its own clock (audio device switched after load), the highlight waits for it
+  const APP_VERSION = "1.33"; // v1.32 lag correction switched off (unverified in Safari; now only shown in the readout). Readout appears at once, also via Shift+D
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -1408,7 +1408,9 @@
         }
       } catch (_) { /* older browsers: no report, keep the plain clock */ }
       window.__hlLag = lag;
-      const audibleAt = Tone.immediate() - Math.max(outLat, lag) - window.__hlDelay;
+      // v1.33: measured and shown in the readout, but NOT applied until it is
+      // proven honest in Safari (its report has a history of bugs).
+      const audibleAt = Tone.immediate() - outLat - window.__hlDelay;
       ticks = Tone.Transport.getTicksAtTime(Math.max(0, audibleAt));
     } else {
       ticks = Tone.Transport.ticks;
@@ -1457,7 +1459,18 @@
       if (window.__peDbg.el) window.__peDbg.el.remove();
       window.__peDbg = null;
     }
+    // Show it straight away, even while stopped (v1.32 only drew it mid-play).
+    if (window.__peDbg) {
+      try { paintHlDebug(Tone.Transport.ticks / Tone.Transport.PPQ); } catch (_) {}
+    }
   }
+  // Shift+D also toggles it (ignored while typing in the search box).
+  document.addEventListener("keydown", (e) => {
+    const tag = (e.target && e.target.tagName) || "";
+    if (e.shiftKey && (e.key === "D" || e.key === "d") && !/INPUT|TEXTAREA|SELECT/.test(tag)) {
+      setHlDebug(!window.__peDbg);
+    }
+  });
   if (PE_PARAMS.get("hldebug")) setHlDebug(true);
   // Tap the version badge 3 times (within 1.5 s) to switch the readout on/off
   // without reloading — so the same page can be compared with and without it.
@@ -1505,7 +1518,7 @@
       "note cb gap ms avg " + f(avg(d.gaps)),
       "HL-minus-NOTE avg " + f(avg(d.off)) + " last " + f(d.off[d.off.length - 1]) + " n" + d.off.length,
       "unmatched " + d.miss + "  wrong pitch " + d.pitchMiss,
-      "trim " + f(window.__hlDelay) + "  LAG APPLIED " + f(window.__hlLag),
+      "trim " + f(window.__hlDelay) + "  browser-reported lag " + f(window.__hlLag) + " (shown only)",
     ].join("\n");
   }
 
