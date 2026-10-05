@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.30"; // ?hldebug=1 shows an on-screen timing readout (to find why Safari's highlight runs early)
+  const APP_VERSION = "1.32"; // Safari: if the browser reports its sound is running behind its own clock (audio device switched after load), the highlight waits for it
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -832,6 +832,7 @@
       if (window.__peDbg) {                       // ?hldebug=1 only
         const d = window.__peDbg;
         d.late.push(when - time); if (d.late.length > 24) d.late.shift();
+        d.trig.push({ beat: ev.beat, midi: ev.midi, when }); if (d.trig.length > 96) d.trig.shift();
         const t = performance.now();
         if (d.lastCb) { d.gaps.push(t - d.lastCb); if (d.gaps.length > 24) d.gaps.shift(); }
         d.lastCb = t;
@@ -1204,7 +1205,8 @@
               if (!el) continue;
               const durBeats = sn.Length ? sn.Length.RealValue * 4 : 0.25;
               const beats = passes.map((s) => s + off);
-              for (const b of beats) map.push({ beat: b, durBeats, el });
+              const midi = typeof sn.halfTone === "number" ? sn.halfTone + 12 : null;
+              for (const b of beats) map.push({ beat: b, durBeats, el, midi });
               el.classList.add("pe-note-click");
               el.addEventListener("click", () => {
                 const sec = engine.section;
@@ -1342,6 +1344,7 @@
   // Highlight the note(s) sounding at the current Transport position.
   // Runs from a rAF loop; cheap enough to call every frame (<200 notes).
   let lastPaintedTicks = -1;
+  let hlLag = null;   // smoothed "clock ahead of speaker" gap, seconds (v1.32)
   function updateHighlight(force) {
     if (!engine.noteMap.length) return;
     // v1.28 FIX — the highlight was ~0.25 s EARLY (a full note at brisk tempos).
@@ -1382,7 +1385,30 @@
     if (playing) {
       const raw = Tone.context.rawContext || {};
       const outLat = raw.outputLatency || raw.baseLatency || 0;
-      const audibleAt = Tone.immediate() - outLat - window.__hlDelay;
+      // v1.32: Safari can run its sound well behind its own audio clock (seen
+      // as the highlight running a quarter/half note EARLY, by a different
+      // amount each session) — WebKit puts a buffer between the page and the
+      // speaker when the audio device or its sample rate changes after load.
+      // getOutputTimestamp() is the browser's own report of what is leaving
+      // the speaker now. Only trusted when the gap is clearly abnormal
+      // (> 80 ms) and sane (< 3 s), so Chrome and healthy Safari sessions are
+      // untouched. Smoothed so the highlight never jitters.
+      let lag = 0;
+      try {
+        const n = raw._nativeAudioContext || raw._nativeContext || raw;
+        const src = n.getOutputTimestamp ? n : raw;
+        const o = src.getOutputTimestamp();
+        if (o && o.contextTime > 0 && o.performanceTime > 0) {
+          const heard = o.contextTime + (performance.now() - o.performanceTime) / 1000;
+          const gap = Tone.immediate() - heard;
+          if (gap > -0.05 && gap < 3) {
+            hlLag = hlLag === null ? gap : hlLag + (gap - hlLag) * 0.05;
+            if (hlLag > 0.08) lag = hlLag;
+          }
+        }
+      } catch (_) { /* older browsers: no report, keep the plain clock */ }
+      window.__hlLag = lag;
+      const audibleAt = Tone.immediate() - Math.max(outLat, lag) - window.__hlDelay;
       ticks = Tone.Transport.getTicksAtTime(Math.max(0, audibleAt));
     } else {
       ticks = Tone.Transport.ticks;
@@ -1406,6 +1432,16 @@
     const els2 = active.filter((e) => e.beat === latest).map((e) => e.el);
 
     if (sameEls(els2, engine.activeEls)) return;
+    if (window.__peDbg && playing && latest !== null) {
+      // Direct check: when this note lit up vs when its sound was scheduled.
+      const d = window.__peDbg, me = active.find((e) => e.beat === latest);
+      let hit = null;
+      for (const t of d.trig) if (Math.abs(t.beat - latest) < 0.02) hit = t;
+      if (hit) {
+        d.off.push(Tone.immediate() - hit.when); if (d.off.length > 24) d.off.shift();
+        if (me && me.midi !== null && me.midi !== hit.midi) d.pitchMiss++;
+      } else d.miss++;
+    }
     for (const el of engine.activeEls) el.classList.remove("pe-active");
     for (const el of els2) el.classList.add("pe-active");
     engine.activeEls = els2;
@@ -1414,7 +1450,26 @@
   }
 
   // ?hldebug=1 — on-screen timing readout. Diagnostic only; changes nothing.
-  if (PE_PARAMS.get("hldebug")) window.__peDbg = { late: [], gaps: [], lastCb: 0, lastPaint: 0 };
+  function setHlDebug(on) {
+    if (on && !window.__peDbg) {
+      window.__peDbg = { late: [], gaps: [], trig: [], off: [], miss: 0, pitchMiss: 0, lastCb: 0, lastPaint: 0 };
+    } else if (!on && window.__peDbg) {
+      if (window.__peDbg.el) window.__peDbg.el.remove();
+      window.__peDbg = null;
+    }
+  }
+  if (PE_PARAMS.get("hldebug")) setHlDebug(true);
+  // Tap the version badge 3 times (within 1.5 s) to switch the readout on/off
+  // without reloading — so the same page can be compared with and without it.
+  (function () {
+    let taps = [];
+    document.addEventListener("click", (e) => {
+      if (!e.target || e.target.id !== "version") return;
+      const t = performance.now();
+      taps = taps.filter((x) => t - x < 1500); taps.push(t);
+      if (taps.length >= 3) { taps = []; setHlDebug(!window.__peDbg); }
+    });
+  })();
   function paintHlDebug(pos) {
     const d = window.__peDbg, t = performance.now();
     if (t - d.lastPaint < 250) return;
@@ -1448,7 +1503,9 @@
       "rate " + raw.sampleRate + "  state " + raw.state,
       "note late avg " + f(avg(d.late)) + " max " + f(max(d.late)),
       "note cb gap ms avg " + f(avg(d.gaps)),
-      "trim " + f(window.__hlDelay),
+      "HL-minus-NOTE avg " + f(avg(d.off)) + " last " + f(d.off[d.off.length - 1]) + " n" + d.off.length,
+      "unmatched " + d.miss + "  wrong pitch " + d.pitchMiss,
+      "trim " + f(window.__hlDelay) + "  LAG APPLIED " + f(window.__hlLag),
     ].join("\n");
   }
 
