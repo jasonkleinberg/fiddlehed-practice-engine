@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.33"; // v1.32 lag correction switched off (unverified in Safari; now only shown in the readout). Readout appears at once, also via Shift+D
+  const APP_VERSION = "1.34"; // timing readout now also records while hidden, and shows box-hidden vs box-shown numbers side by side (Safari diagnosis); no playback change
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -42,6 +42,10 @@
   //   solo    the single-tune lesson-page embed (?solo=1) vs the full library.
   //   surface 'embed' inside an iframe, 'direct' standalone.
   const PE_PARAMS = new URLSearchParams(location.search);
+  const peBucket = () => ({ hl: peS(), late: peS(), head: peS(), tick: peS(), raf: peS(), lag: peS() });
+  function peS() { return { n: 0, sum: 0, max: -Infinity }; }
+  function peStat(a, v) { if (typeof v !== "number" || !isFinite(v)) return; a.n++; a.sum += v; if (v > a.max) a.max = v; }
+  window.__peDbg = { show: false, hidden: peBucket(), shown: peBucket(), trig: [], miss: 0, pitchMiss: 0, lastRaf: 0, lastTick: 0, lastPaint: 0, el: null };
   const PE_CONTEXT = {
     t: PE_PARAMS.get("t") || "none",
     member: PE_PARAMS.get("member") || "unknown",
@@ -710,6 +714,16 @@
     // compensate sample onsets; the default 100ms lookahead would clamp the
     // bigger leads (G4, E6). 250ms of UI latency is fine for a practice tool.
     if (Tone.context && "lookAhead" in Tone.context) Tone.context.lookAhead = 0.35;
+    try {   // readout: how regularly Tone's scheduling clock fires
+      if (!window.__peDbg.tickHooked) {
+        window.__peDbg.tickHooked = true;
+        Tone.context.on("tick", () => {
+          const d = window.__peDbg, t = performance.now();
+          if (d.lastTick && Tone.Transport.state === "started") peStat((d.show ? d.shown : d.hidden).tick, t - d.lastTick);
+          d.lastTick = t;
+        });
+      }
+    } catch (_) {}
     // Per-layer gain → independent volume sliders (MetroDrone Tone.Gain pattern).
     engine.melodyGain = new Tone.Gain(els.melVol.value / 100).toDestination();
     engine.organGain = new Tone.Gain(els.orgVol.value / 100).toDestination();
@@ -829,13 +843,11 @@
       else if (ev.artic === "diff") gap = Math.min(window.__gapDiff, full * 0.2);
       const dur = Math.max(0.05, full - gap);
       const when = Math.max(time - melodyLeadFor(ev.midi), Tone.now());
-      if (window.__peDbg) {                       // ?hldebug=1 only
-        const d = window.__peDbg;
-        d.late.push(when - time); if (d.late.length > 24) d.late.shift();
+      {                                           // timing readout stats (always on, cheap)
+        const d = window.__peDbg, B = d.show ? d.shown : d.hidden;
+        peStat(B.late, when - time);                     // how late the note was pushed
+        peStat(B.head, time - Tone.immediate());         // how far ahead of the clock it was found
         d.trig.push({ beat: ev.beat, midi: ev.midi, when }); if (d.trig.length > 96) d.trig.shift();
-        const t = performance.now();
-        if (d.lastCb) { d.gaps.push(t - d.lastCb); if (d.gaps.length > 24) d.gaps.shift(); }
-        d.lastCb = t;
       }
       engine.sampler.triggerAttackRelease(
         Tone.Frequency(ev.midi, "midi").toNote(), dur, when);
@@ -1346,6 +1358,11 @@
   let lastPaintedTicks = -1;
   let hlLag = null;   // smoothed "clock ahead of speaker" gap, seconds (v1.32)
   function updateHighlight(force) {
+    {
+      const d = window.__peDbg, t = performance.now();
+      if (d.lastRaf && Tone.Transport.state === "started") peStat((d.show ? d.shown : d.hidden).raf, t - d.lastRaf);
+      d.lastRaf = t;
+    }
     if (!engine.noteMap.length) return;
     // v1.28 FIX — the highlight was ~0.25 s EARLY (a full note at brisk tempos).
     // Cause: Tone.Transport.ticks reports the position at "now + lookAhead",
@@ -1408,6 +1425,7 @@
         }
       } catch (_) { /* older browsers: no report, keep the plain clock */ }
       window.__hlLag = lag;
+      if (hlLag !== null) peStat((window.__peDbg.show ? window.__peDbg.shown : window.__peDbg.hidden).lag, hlLag);
       // v1.33: measured and shown in the readout, but NOT applied until it is
       // proven honest in Safari (its report has a history of bugs).
       const audibleAt = Tone.immediate() - outLat - window.__hlDelay;
@@ -1420,7 +1438,7 @@
     const pos = ticks / Tone.Transport.PPQ;             // quarter-note beats
 
     try { updateBarNow(pos); } catch (_) { /* a band must never break playback */ }
-    if (window.__peDbg) { try { paintHlDebug(pos); } catch (_) {} }
+    if (window.__peDbg.show) { try { paintHlDebug(pos); } catch (_) {} }
 
     const active = [];
     for (const e of engine.noteMap) {
@@ -1434,13 +1452,14 @@
     const els2 = active.filter((e) => e.beat === latest).map((e) => e.el);
 
     if (sameEls(els2, engine.activeEls)) return;
-    if (window.__peDbg && playing && latest !== null) {
+    if (playing && latest !== null) {
       // Direct check: when this note lit up vs when its sound was scheduled.
-      const d = window.__peDbg, me = active.find((e) => e.beat === latest);
+      const d = window.__peDbg, B = d.show ? d.shown : d.hidden;
+      const me = active.find((e) => e.beat === latest);
       let hit = null;
       for (const t of d.trig) if (Math.abs(t.beat - latest) < 0.02) hit = t;
       if (hit) {
-        d.off.push(Tone.immediate() - hit.when); if (d.off.length > 24) d.off.shift();
+        peStat(B.hl, Tone.immediate() - hit.when);
         if (me && me.midi !== null && me.midi !== hit.midi) d.pitchMiss++;
       } else d.miss++;
     }
@@ -1451,16 +1470,16 @@
     autoScroll(els2[0]);
   }
 
-  // ?hldebug=1 — on-screen timing readout. Diagnostic only; changes nothing.
+  // Timing readout. Diagnostic only; changes nothing about playback.
+  // v1.34: stats are collected all the time (a few numbers per note/frame)
+  // and kept in two buckets — while the box is hidden and while it is shown —
+  // because in Safari the highlight has only ever been right with the box on.
   function setHlDebug(on) {
-    if (on && !window.__peDbg) {
-      window.__peDbg = { late: [], gaps: [], trig: [], off: [], miss: 0, pitchMiss: 0, lastCb: 0, lastPaint: 0 };
-    } else if (!on && window.__peDbg) {
-      if (window.__peDbg.el) window.__peDbg.el.remove();
-      window.__peDbg = null;
-    }
-    // Show it straight away, even while stopped (v1.32 only drew it mid-play).
-    if (window.__peDbg) {
+    const d = window.__peDbg;
+    d.show = !!on;
+    if (!on && d.el) { d.el.remove(); d.el = null; }
+    if (on) {
+      d.lastPaint = 0;
       try { paintHlDebug(Tone.Transport.ticks / Tone.Transport.PPQ); } catch (_) {}
     }
   }
@@ -1468,7 +1487,7 @@
   document.addEventListener("keydown", (e) => {
     const tag = (e.target && e.target.tagName) || "";
     if (e.shiftKey && (e.key === "D" || e.key === "d") && !/INPUT|TEXTAREA|SELECT/.test(tag)) {
-      setHlDebug(!window.__peDbg);
+      setHlDebug(!window.__peDbg.show);
     }
   });
   if (PE_PARAMS.get("hldebug")) setHlDebug(true);
@@ -1480,7 +1499,7 @@
       if (!e.target || e.target.id !== "version") return;
       const t = performance.now();
       taps = taps.filter((x) => t - x < 1500); taps.push(t);
-      if (taps.length >= 3) { taps = []; setHlDebug(!window.__peDbg); }
+      if (taps.length >= 3) { taps = []; setHlDebug(!window.__peDbg.show); }
     });
   })();
   function paintHlDebug(pos) {
@@ -1495,30 +1514,28 @@
       document.body.appendChild(d.el);
     }
     const raw = Tone.context.rawContext || {};
-    const n = raw._nativeAudioContext || raw._nativeContext || raw;
-    const f = (x) => (typeof x === "number" && isFinite(x)) ? x.toFixed(3) : String(x);
-    const avg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
-    const max = (a) => a.length ? Math.max.apply(null, a) : NaN;
-    let ots = "n/a";
-    try {
-      const o = (n.getOutputTimestamp || raw.getOutputTimestamp).call(n.getOutputTimestamp ? n : raw);
-      const heard = o.contextTime + (performance.now() - o.performanceTime) / 1000;
-      ots = f(Tone.immediate() - heard) + " (ctx " + f(o.contextTime) + ")";
-    } catch (_) {}
-    const bpm = Tone.Transport.bpm.value;
+    const f = (x) => (typeof x === "number" && isFinite(x)) ? x.toFixed(3) : "-";
+    const row = (name, key, k) => {
+      const c = (b) => { const a = b[key]; return a.n
+        ? (f(a.sum / a.n * k) + " / " + f(a.max * k)).padEnd(16) : "-".padEnd(16); };
+      return name.padEnd(20) + c(d.hidden) + c(d.shown);
+    };
     d.el.textContent = [
       "PE v" + APP_VERSION + "  " + (/Chrome/.test(navigator.userAgent) ? "Chrome" :
         /Safari/.test(navigator.userAgent) ? "Safari" : "other") + (window.top !== window ? "  embedded" : ""),
-      "bpm " + f(bpm) + "  beat " + f(pos),
-      "lookAhead " + f(Tone.context.lookAhead) + "  now-imm " + f(Tone.now() - Tone.immediate()),
-      "baseLat " + f(raw.baseLatency) + "  outLat " + f(raw.outputLatency),
-      "clock-vs-heard " + ots,
-      "rate " + raw.sampleRate + "  state " + raw.state,
-      "note late avg " + f(avg(d.late)) + " max " + f(max(d.late)),
-      "note cb gap ms avg " + f(avg(d.gaps)),
-      "HL-minus-NOTE avg " + f(avg(d.off)) + " last " + f(d.off[d.off.length - 1]) + " n" + d.off.length,
-      "unmatched " + d.miss + "  wrong pitch " + d.pitchMiss,
-      "trim " + f(window.__hlDelay) + "  browser-reported lag " + f(window.__hlLag) + " (shown only)",
+      "bpm " + f(Tone.Transport.bpm.value) + "  beat " + f(pos) + "  rate " + raw.sampleRate + " " + raw.state,
+      "lookAhead " + f(Tone.context.lookAhead) + "  baseLat " + f(raw.baseLatency) + "  trim " + f(window.__hlDelay),
+      "",
+      "avg / max".padStart(29) + "".padEnd(7) + "avg / max",
+      "".padEnd(20) + "BOX HIDDEN".padEnd(16) + "BOX SHOWN",
+      row("HL minus NOTE s", "hl", 1),
+      row("note pushed late s", "late", 1),
+      row("note headroom s", "head", 1),
+      row("clock tick gap ms", "tick", 1),
+      row("frame gap ms", "raf", 1),
+      row("reported lag s", "lag", 1),
+      "notes: hidden " + d.hidden.hl.n + "  shown " + d.shown.hl.n +
+        "  unmatched " + d.miss + "  wrong pitch " + d.pitchMiss,
     ].join("\n");
   }
 
