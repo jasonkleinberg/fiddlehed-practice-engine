@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.34"; // timing readout now also records while hidden, and shows box-hidden vs box-shown numbers side by side (Safari diagnosis); no playback change
+  const APP_VERSION = "1.35"; // guitar feel: accents, human timing, varied strum speed, ringing bass, light up-strums (?guitar=old = previous guitar)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -616,6 +616,13 @@
   };
   const GUITAR_BASS_LOW = 40;      // MIDI E2, the guitar's low E string
   const GUITAR_STRUM_GAP = 0.012;  // seconds between strings in a strum
+  // v1.35 feel pass. ?guitar=old plays the v1.26 guitar for A/B. Live-tunable
+  // from the console: window.__gtr.up (0–1, how often the light up-strum
+  // plays), .loose (0–2, how much timing/loudness varies), .late (seconds the
+  // strum sits behind the beat).
+  const GUITAR_OLD = PE_PARAMS.get("guitar") === "old";
+  window.__gtr = window.__gtr || { up: 0.7, loose: 1, late: 0.006 };
+  const GUITAR_CHUCK_LOW = 54;     // MIDI F#3 — strums live on the upper strings
   const midiNote = (m) => Tone.Frequency(m, "midi").toNote();
 
   function ensureGuitar() {
@@ -665,16 +672,28 @@
         note = up <= GUITAR_BASS_LOW + 12 ? up : up - 12;   // keep the bass on the low strings
       }
       boomCount++;
-      events.push({ beat, type: "boom", notes: [note] });
+      events.push({ beat, type: "boom", notes: [note], strong: Math.abs(beat - curBar) < 1e-6 });
     };
     const chuck = (beat) => {
       const c = chordAt(beat);
       if (!c) return;
       const notes = c.midis.slice();
       notes.push(notes[0] + 12);          // one more string on top for a fuller strum
-      events.push({ beat, type: "chuck", notes });
+      // v1.35 voicing: four chord tones climbing from F#3, like the upper
+      // strings of an open chord (7th chords no longer stack five notes).
+      const pcs = [...new Set(c.midis.map((m) => ((m % 12) + 12) % 12))];
+      const strings = [];
+      for (let m = GUITAR_CHUCK_LOW; m < GUITAR_CHUCK_LOW + 30 && strings.length < 4; m++) {
+        if (pcs.includes(m % 12)) strings.push(m);
+      }
+      events.push({ beat, type: "chuck", notes, strings });
+      // Light up-strum on the "and" after the chuck (simple meters only; the
+      // callback decides each time whether to play it).
+      if (!compound && !waltz) events.push({ beat: beat + 0.5, type: "up", strings: strings.slice(-3).reverse() });
     };
+    let curBar = 0;
     for (let bar = s.bodyStartBeats; bar < s.totalBeats - 1e-6; bar += barBeats) {
+      curBar = bar;
       if (compound) {
         for (let p = 0; p < barBeats - 1e-6; p += 1.5) { boom(bar + p); chuck(bar + p + 1); }
       } else if (waltz) {
@@ -684,7 +703,13 @@
         for (let q = 0; q < slots; q++) (q % 2 === 0 ? boom : chuck)(bar + q);
       }
     }
-    return events.filter((e) => e.beat < s.totalBeats - 1e-6);
+    const out = events.filter((e) => e.beat < s.totalBeats - 1e-6).sort((a, b) => a.beat - b.beat);
+    // Each bass note rings until the next one (v1.35), instead of a fixed stub.
+    const booms = out.filter((e) => e.type === "boom");
+    booms.forEach((b, i) => {
+      b.ringBeats = Math.min(4, (i + 1 < booms.length ? booms[i + 1].beat : s.totalBeats) - b.beat);
+    });
+    return out;
   }
 
   function setBacking(which, fromUser) {
@@ -871,6 +896,32 @@
     // student has switched the chord sound to guitar and the samples are in.
     engine.guitarPart = new Tone.Part((time, ev) => {
       if (engine.backing !== "guitar" || !engine.guitarReady) return;
+      if (!GUITAR_OLD) {
+        // v1.35 feel pass — nothing here is random enough to sound drunk:
+        // a few ms and a few % each way, like a steady human hand.
+        const G = window.__gtr, L = Math.max(0, G.loose);
+        const r = () => (Math.random() - 0.5) * 2 * L;       // −L … +L
+        const bpm = Tone.Transport.bpm.value, spb = 60 / bpm;
+        const clampV = (v) => Math.max(0.05, Math.min(1, v));
+        if (ev.type === "boom") {
+          const dur = Math.min(1.8, Math.max(0.3, (ev.ringBeats || 2) * spb * 0.95));
+          engine.guitar.triggerAttackRelease(midiNote(ev.notes[0]), dur,
+            time + Math.max(0, 0.002 + r() * 0.003), clampV((ev.strong ? 0.92 : 0.8) + r() * 0.05));
+        } else if (ev.type === "chuck") {
+          const gap = Math.min(0.016, (0.009 + Math.random() * 0.006 * L) * Math.min(1, 110 / bpm) + 0.003);
+          const t0 = time + Math.max(0, G.late + r() * 0.004);
+          const v0 = 0.56 + r() * 0.06, dur = 0.18 + Math.random() * 0.06;
+          (ev.strings || ev.notes).forEach((m, i) =>
+            engine.guitar.triggerAttackRelease(midiNote(m), dur, t0 + i * gap, clampV(v0 * (1 - 0.07 * i))));
+        } else if (ev.type === "up") {
+          if (bpm > 140 || Math.random() >= G.up) return;
+          const t0 = time + Math.max(0, 0.003 + r() * 0.004), v0 = 0.2 + r() * 0.04;
+          ev.strings.forEach((m, i) =>
+            engine.guitar.triggerAttackRelease(midiNote(m), 0.1, t0 + i * 0.007, clampV(v0 * (1 - 0.1 * i))));
+        }
+        return;
+      }
+      if (ev.type === "up") return;
       if (ev.type === "boom") {
         engine.guitar.triggerAttackRelease(midiNote(ev.notes[0]), 0.5, time, 0.9);
       } else {
