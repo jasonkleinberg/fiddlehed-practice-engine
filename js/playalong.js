@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.35"; // guitar feel: accents, human timing, varied strum speed, ringing bass, light up-strums (?guitar=old = previous guitar)
+  const APP_VERSION = "1.36"; // guitar: some bars are strummed in steady eighths, with the in-between strums quiet (same accents)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -621,7 +621,8 @@
   // plays), .loose (0–2, how much timing/loudness varies), .late (seconds the
   // strum sits behind the beat).
   const GUITAR_OLD = PE_PARAMS.get("guitar") === "old";
-  window.__gtr = window.__gtr || { up: 0.7, loose: 1, late: 0.006 };
+  // .fill (0–1) = share of bars strummed in steady eighths (v1.36).
+  window.__gtr = window.__gtr || { up: 0.7, loose: 1, late: 0.006, fill: 0.4 };
   const GUITAR_CHUCK_LOW = 54;     // MIDI F#3 — strums live on the upper strings
   const midiNote = (m) => Tone.Frequency(m, "midi").toNote();
 
@@ -672,7 +673,21 @@
         note = up <= GUITAR_BASS_LOW + 12 ? up : up - 12;   // keep the bass on the low strings
       }
       boomCount++;
-      events.push({ beat, type: "boom", notes: [note], strong: Math.abs(beat - curBar) < 1e-6 });
+      events.push({ beat, type: "boom", notes: [note], strong: Math.abs(beat - curBar) < 1e-6, bar: curBar });
+      // v1.36: quiet strum on the "and" after the bass note. Only sounds in
+      // bars the callback has chosen to fill, so those bars run in steady
+      // eighths: BOOM-a-CHUCK-a with the "a"s soft.
+      if (!compound && !waltz) {
+        events.push({ beat: beat + 0.5, type: "fill", strings: upperStrings(c).slice(-3).reverse(), bar: curBar });
+      }
+    };
+    const upperStrings = (c) => {
+      const pcs = [...new Set(c.midis.map((m) => ((m % 12) + 12) % 12))];
+      const out = [];
+      for (let m = GUITAR_CHUCK_LOW; m < GUITAR_CHUCK_LOW + 30 && out.length < 4; m++) {
+        if (pcs.includes(m % 12)) out.push(m);
+      }
+      return out;
     };
     const chuck = (beat) => {
       const c = chordAt(beat);
@@ -681,15 +696,11 @@
       notes.push(notes[0] + 12);          // one more string on top for a fuller strum
       // v1.35 voicing: four chord tones climbing from F#3, like the upper
       // strings of an open chord (7th chords no longer stack five notes).
-      const pcs = [...new Set(c.midis.map((m) => ((m % 12) + 12) % 12))];
-      const strings = [];
-      for (let m = GUITAR_CHUCK_LOW; m < GUITAR_CHUCK_LOW + 30 && strings.length < 4; m++) {
-        if (pcs.includes(m % 12)) strings.push(m);
-      }
-      events.push({ beat, type: "chuck", notes, strings });
+      const strings = upperStrings(c);
+      events.push({ beat, type: "chuck", notes, strings, bar: curBar });
       // Light up-strum on the "and" after the chuck (simple meters only; the
       // callback decides each time whether to play it).
-      if (!compound && !waltz) events.push({ beat: beat + 0.5, type: "up", strings: strings.slice(-3).reverse() });
+      if (!compound && !waltz) events.push({ beat: beat + 0.5, type: "up", strings: strings.slice(-3).reverse(), bar: curBar });
     };
     let curBar = 0;
     for (let bar = s.bodyStartBeats; bar < s.totalBeats - 1e-6; bar += barBeats) {
@@ -903,6 +914,11 @@
         const r = () => (Math.random() - 0.5) * 2 * L;       // −L … +L
         const bpm = Tone.Transport.bpm.value, spb = 60 / bpm;
         const clampV = (v) => Math.max(0.05, Math.min(1, v));
+        // Each bar start rolls once: is this a filled (steady-eighths) bar?
+        if (ev.type === "boom" && ev.strong) {
+          engine.gtrBar = { bar: ev.bar, full: bpm <= 140 && Math.random() < G.fill };
+        }
+        const fullBar = !!engine.gtrBar && engine.gtrBar.bar === ev.bar && engine.gtrBar.full;
         if (ev.type === "boom") {
           const dur = Math.min(1.8, Math.max(0.3, (ev.ringBeats || 2) * spb * 0.95));
           engine.guitar.triggerAttackRelease(midiNote(ev.notes[0]), dur,
@@ -913,15 +929,19 @@
           const v0 = 0.56 + r() * 0.06, dur = 0.18 + Math.random() * 0.06;
           (ev.strings || ev.notes).forEach((m, i) =>
             engine.guitar.triggerAttackRelease(midiNote(m), dur, t0 + i * gap, clampV(v0 * (1 - 0.07 * i))));
-        } else if (ev.type === "up") {
-          if (bpm > 140 || Math.random() >= G.up) return;
-          const t0 = time + Math.max(0, 0.003 + r() * 0.004), v0 = 0.2 + r() * 0.04;
+        } else if (ev.type === "up" || ev.type === "fill") {
+          // In a filled bar every "and" is played; the one after the bass
+          // note is the softest, so the accents stay boom > chuck > a.
+          if (bpm > 140) return;
+          if (ev.type === "fill" ? !fullBar : (!fullBar && Math.random() >= G.up)) return;
+          const t0 = time + Math.max(0, 0.003 + r() * 0.004);
+          const v0 = (ev.type === "fill" ? 0.15 : 0.2) + r() * 0.04;
           ev.strings.forEach((m, i) =>
             engine.guitar.triggerAttackRelease(midiNote(m), 0.1, t0 + i * 0.007, clampV(v0 * (1 - 0.1 * i))));
         }
         return;
       }
-      if (ev.type === "up") return;
+      if (ev.type === "up" || ev.type === "fill") return;
       if (ev.type === "boom") {
         engine.guitar.triggerAttackRelease(midiNote(ev.notes[0]), 0.5, time, 0.9);
       } else {
