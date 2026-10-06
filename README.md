@@ -122,3 +122,5 @@ Every Claude Code session should start by reading this file and `PROJECT_LOG.md`
 ## Sample credits
 
 Violin (`samples/violin*`) and acoustic guitar (`samples/guitar`) samples are from [nbrosowsky/tonejs-instruments](https://github.com/nbrosowsky/tonejs-instruments), licensed CC-BY 3.0. They have been trimmed and level-matched for this app.
+
+<!-- deploy nudge 2026-10-06: GitHub Pages build for v1.36 was stuck in queue -->
