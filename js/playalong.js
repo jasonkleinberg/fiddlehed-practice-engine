@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.36"; // guitar: some bars are strummed in steady eighths, with the in-between strums quiet (same accents)
+  const APP_VERSION = "1.37"; // melody "snag" fix: violin notes now land on time instead of 12-50 ms late and uneven (?snag=old = previous timing)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -42,6 +42,7 @@
   //   solo    the single-tune lesson-page embed (?solo=1) vs the full library.
   //   surface 'embed' inside an iframe, 'direct' standalone.
   const PE_PARAMS = new URLSearchParams(location.search);
+  const SNAG_OLD = PE_PARAMS.get("snag") === "old";   // v1.37 A/B switch
   const peBucket = () => ({ hl: peS(), late: peS(), head: peS(), tick: peS(), raf: peS(), lag: peS() });
   function peS() { return { n: 0, sum: 0, max: -Infinity }; }
   function peStat(a, v) { if (typeof v !== "number" || !isFinite(v)) return; a.n++; a.sum += v; if (v > a.max) a.max = v; }
@@ -878,7 +879,16 @@
       if (ev.artic === "same") gap = Math.min(window.__gapSame, full * 0.35);
       else if (ev.artic === "diff") gap = Math.min(window.__gapDiff, full * 0.2);
       const dur = Math.max(0.05, full - gap);
-      const when = Math.max(time - melodyLeadFor(ev.midi), Tone.now());
+      // v1.37 "snag" fix. The old clamp was Tone.now(), which already
+      // includes the 0.35 s lookAhead — and Part callbacks always fire with
+      // time <= now(), so the clamp won on EVERY note: each note was pushed to
+      // "whenever the scheduler happened to wake up", 12-50 ms late and
+      // different every time (Caren: notes "snag, then burst out"). Now the
+      // clamp is the real audio clock, so notes land at time - lead as the
+      // onset compensation always intended. ?snag=old = previous timing.
+      const when = SNAG_OLD
+        ? Math.max(time - melodyLeadFor(ev.midi), Tone.now())
+        : Math.max(time - melodyLeadFor(ev.midi), Tone.immediate() + 0.005);
       {                                           // timing readout stats (always on, cheap)
         const d = window.__peDbg, B = d.show ? d.shown : d.hidden;
         peStat(B.late, when - time);                     // how late the note was pushed
