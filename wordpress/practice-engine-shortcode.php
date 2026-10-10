@@ -56,7 +56,7 @@ function fiddlehed_practice_engine_shortcode( $atts ) {
 
 	// v1.38: single-tune lesson-page mode.
 	// TODO: set this to the Practice Toolkit page's address once it's live.
-	$full_default = '';
+	$full_default = 'https://fiddlehed.com/practice-engine-test/';
 	if ( ! empty( $atts['solo'] ) && '0' !== $atts['solo'] && ! empty( $atts['tune'] ) ) {
 		$src  = add_query_arg( 'solo', '1', $src );
 		$full = ! empty( $atts['full'] ) ? $atts['full'] : $full_default;
