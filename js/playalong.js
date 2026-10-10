@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.37"; // melody "snag" fix: violin notes now land on time instead of 12-50 ms late and uneven (?snag=old = previous timing)
+  const APP_VERSION = "1.38"; // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -43,6 +43,41 @@
   //   surface 'embed' inside an iframe, 'direct' standalone.
   const PE_PARAMS = new URLSearchParams(location.search);
   const SNAG_OLD = PE_PARAMS.get("snag") === "old";   // v1.37 A/B switch
+  // v1.38: iPhone/iPad play Web Audio through the ringer channel, so Silent
+  // Mode mutes the app while it looks like it's playing (Jason hit this on
+  // the iPad in the beta). Same banner and detection as MetroDrone; iPadOS
+  // reports itself as a Mac, hence the touch-points check.
+  try {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      const w = document.getElementById("ios-warning");
+      if (w) w.hidden = false;
+    }
+  } catch (_) {}
+  const SOLO = !!PE_PARAMS.get("solo") && PE_PARAMS.get("solo") !== "0";   // v1.38
+  function applySoloMode() {
+    const picker = document.querySelector(".picker");
+    if (picker) picker.hidden = true;
+    if (els.tuneResults) els.tuneResults.hidden = true;
+    document.body.classList.add("pe-solo");
+    // Link to the full library (opens in the parent page, not the iframe).
+    // Only fiddlehed.com addresses are accepted, so the param can't be used
+    // to send students somewhere else.
+    const full = PE_PARAMS.get("full");
+    const box = document.getElementById("solo-more");
+    const a = document.getElementById("solo-more-link");
+    if (full && box && a) {
+      try {
+        const u = new URL(full);
+        if (u.protocol === "https:" && /(^|\.)fiddlehed\.com$/.test(u.hostname)) {
+          a.href = u.href;
+          box.hidden = false;
+          a.addEventListener("click", () => track("pe_solo_full_click", {}));
+        }
+      } catch (_) { /* bad URL — no link */ }
+    }
+  }
   const peBucket = () => ({ hl: peS(), late: peS(), head: peS(), tick: peS(), raf: peS(), lag: peS() });
   function peS() { return { n: 0, sum: 0, max: -Infinity }; }
   function peStat(a, v) { if (typeof v !== "number" || !isFinite(v)) return; a.n++; a.sum += v; if (v > a.max) a.max = v; }
@@ -2022,6 +2057,11 @@
       const rec =
         engine.tunes.find((t) => t.slug === slug) || engine.tunes[0];
       if (!rec) throw new Error("empty tune index");
+      // v1.38 single-tune mode (lesson pages): hide the picker so students
+      // stay on this lesson's tune. Only when the tune actually exists — a
+      // typo'd slug falls back to the full picker rather than locking the
+      // student onto the wrong tune.
+      if (SOLO && rec.slug === slug) applySoloMode();
       await loadTune(rec);
     } catch (err) {
       console.error(err);

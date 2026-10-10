@@ -193,6 +193,12 @@
     .tune-result:hover, .tune-result:focus {
       outline: none; border-color: var(--fh-red); background: #fff;
     }
+    .ios-warning { background: var(--fh-red); color: var(--fh-cream); padding: 10px 14px; border-radius: 6px;
+      margin: 0 0 14px; text-align: center; font-size: 0.9em; font-weight: 700; }
+    .ios-warning[hidden] { display: none; }
+    .solo-more { margin: 0.25rem 0 1rem; font-size: 0.95rem; text-align: center; }
+    body.pe-solo .lesson-line { display: none; }  /* already on the lesson page */
+    .solo-more[hidden], .picker[hidden] { display: none; }
     .tune-results-note { margin: 2px 0 0; font-size: 0.85rem; color: var(--fh-gray); }
     .picker input[type="text"]:focus, .picker select:focus {
       outline: none; border-color: var(--fh-red);
@@ -404,6 +410,8 @@
         <select id="tune-select" aria-label="Choose a tune"></select>
       </div>
       <div id="tune-results" class="tune-results" aria-live="polite" hidden></div>
+      <p id="ios-warning" class="ios-warning" hidden>&#128241; <strong>iPhone or iPad?</strong> Turn off Silent Mode to hear the music.</p>
+      <p id="solo-more" class="solo-more" hidden><a id="solo-more-link" href="#" target="_top">Want a different tune? Open the full Practice Engine &rarr;</a></p>
 
       <div class="controls">
         <button id="play" disabled>Play</button>
@@ -457,6 +465,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.37"></script>
+  <script src="js/playalong.js?v=1.38"></script>
 </body>
 </html>

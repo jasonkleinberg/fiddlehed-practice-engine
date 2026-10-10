@@ -12,6 +12,14 @@
  *               open the default (first) tune.
  *     height  — iframe height in px (default 400). Bump it if controls clip on
  *               narrow screens.
+ *     solo    — "1" = single-tune mode for lesson pages: the tune picker is
+ *               hidden and the student stays on this tune. Needs tune="".
+ *     full    — (solo only) address of the full Practice Engine page. Shows
+ *               "Want a different tune? Open the full Practice Engine". Leave it
+ *               out to use $full_default below. Must be a fiddlehed.com page.
+ *
+ *     Lesson page:      [practice-engine tune="bile-em-cabbage-down" solo="1"]
+ *     Practice Toolkit: [practice-engine]
  *
  *     [practice-engine tune="orange-blossom-special" height="440"]
  *
@@ -32,6 +40,8 @@ function fiddlehed_practice_engine_shortcode( $atts ) {
 		array(
 			'tune'   => '',
 			'height' => '400',
+			'solo'   => '',
+			'full'   => '',
 		),
 		$atts,
 		'practice-engine'
@@ -42,6 +52,17 @@ function fiddlehed_practice_engine_shortcode( $atts ) {
 	if ( ! empty( $atts['tune'] ) ) {
 		// sanitize_title turns "Oh Susanna" or "oh-susanna" into a safe slug.
 		$src = add_query_arg( 'tune', sanitize_title( $atts['tune'] ), $base );
+	}
+
+	// v1.38: single-tune lesson-page mode.
+	// TODO: set this to the Practice Toolkit page's address once it's live.
+	$full_default = '';
+	if ( ! empty( $atts['solo'] ) && '0' !== $atts['solo'] && ! empty( $atts['tune'] ) ) {
+		$src  = add_query_arg( 'solo', '1', $src );
+		$full = ! empty( $atts['full'] ) ? $atts['full'] : $full_default;
+		if ( ! empty( $full ) ) {
+			$src = add_query_arg( 'full', rawurlencode( esc_url_raw( $full ) ), $src );
+		}
 	}
 
 	$height = max( 240, intval( $atts['height'] ) );
