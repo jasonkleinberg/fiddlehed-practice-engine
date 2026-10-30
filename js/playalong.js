@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.38"; // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
+  const APP_VERSION = "1.40"; // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed

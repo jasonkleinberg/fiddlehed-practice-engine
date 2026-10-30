@@ -118,8 +118,8 @@
    <attributes>
     <divisions>256</divisions>
     <key color="#000000">
-     <fifths>1</fifths>
-     <mode>minor</mode>
+     <fifths>2</fifths>
+     <mode>major</mode>
     </key>
     <time color="#000000">
      <beats>6</beats>
@@ -424,7 +424,6 @@
     <instrument id="P1-I1" />
     <voice>1</voice>
     <type>eighth</type>
-    <accidental>sharp</accidental>
     <stem>down</stem>
     <staff>1</staff>
     <beam number="1">continue</beam>
@@ -646,16 +645,12 @@
     <instrument id="P1-I1" />
     <voice>1</voice>
     <type>eighth</type>
-    <accidental>sharp</accidental>
     <stem>down</stem>
     <staff>1</staff>
    </note>
   </measure>
   <!--============== Part: P1, Measure: 7 ==============-->
   <measure number="7" width="166">
-   <barline location="left">
-    <ending number="1" type="start" />
-   </barline>
    <harmony color="#000000" default-y="20">
     <root>
      <root-step>D</root-step>
@@ -686,7 +681,6 @@
     <instrument id="P1-I1" />
     <voice>1</voice>
     <type>eighth</type>
-    <accidental>sharp</accidental>
     <stem>down</stem>
     <staff>1</staff>
     <beam number="1">continue</beam>
@@ -747,6 +741,9 @@
   </measure>
   <!--============== Part: P1, Measure: 8 ==============-->
   <measure number="8" width="176">
+   <barline location="left">
+    <ending number="1" type="start" />
+   </barline>
    <harmony color="#000000" default-y="20">
     <root>
      <root-step>E</root-step>
@@ -946,7 +943,6 @@
     <instrument id="P1-I1" />
     <voice>1</voice>
     <type>eighth</type>
-    <accidental>sharp</accidental>
     <stem>down</stem>
     <staff>1</staff>
     <beam number="1">continue</beam>
@@ -1094,7 +1090,6 @@
     <instrument id="P1-I1" />
     <voice>1</voice>
     <type>eighth</type>
-    <accidental>sharp</accidental>
     <stem>down</stem>
     <staff>1</staff>
     <beam number="1">continue</beam>
@@ -1243,7 +1238,6 @@
     <instrument id="P1-I1" />
     <voice>1</voice>
     <type>eighth</type>
-    <accidental>sharp</accidental>
     <stem>down</stem>
     <staff>1</staff>
     <beam number="1">continue</beam>
@@ -1398,7 +1392,6 @@
     <instrument id="P1-I1" />
     <voice>1</voice>
     <type>eighth</type>
-    <accidental>sharp</accidental>
     <stem>down</stem>
     <staff>1</staff>
     <beam number="1">continue</beam>
@@ -1461,9 +1454,6 @@
   <measure number="17" width="325">
    <barline location="left">
     <ending number="1" type="start" />
-   </barline>
-   <barline location="left">
-    <ending number="2" type="start" />
    </barline>
    <harmony color="#000000" default-y="25">
     <root>
@@ -1537,11 +1527,15 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
+    <ending number="1" type="stop" />
     <repeat direction="backward" />
    </barline>
   </measure>
   <!--============== Part: P1, Measure: 18 ==============-->
   <measure number="18" width="317">
+   <barline location="left">
+    <ending number="2" type="start" />
+   </barline>
    <harmony color="#000000" default-y="25">
     <root>
      <root-step>E</root-step>
@@ -1636,8 +1630,8 @@
    <attributes>
     <divisions>256</divisions>
     <key color="#000000">
-     <fifths>1</fifths>
-     <mode>minor</mode>
+     <fifths>2</fifths>
+     <mode>major</mode>
     </key>
     <time color="#000000">
      <beats>6</beats>
@@ -1843,9 +1837,6 @@
   </measure>
   <!--============== Part: P2, Measure: 7 ==============-->
   <measure number="7" width="166">
-   <barline location="left">
-    <ending number="1" type="start" print-object="no" />
-   </barline>
    <note color="#000000" default-x="15" default-y="-10">
     <pitch>
      <step>D</step>
@@ -1875,6 +1866,9 @@
   </measure>
   <!--============== Part: P2, Measure: 8 ==============-->
   <measure number="8" width="176">
+   <barline location="left">
+    <ending number="1" type="start" print-object="no" />
+   </barline>
    <note color="#000000" default-x="15" default-y="-20">
     <pitch>
      <step>B</step>
@@ -2297,9 +2291,6 @@
    <barline location="left">
     <ending number="1" type="start" print-object="no" />
    </barline>
-   <barline location="left">
-    <ending number="2" type="start" print-object="no" />
-   </barline>
    <note color="#000000" default-x="15" default-y="-20">
     <pitch>
      <step>B</step>
@@ -2328,11 +2319,15 @@
    </note>
    <barline location="right">
     <bar-style>light-heavy</bar-style>
+    <ending number="1" type="stop" print-object="no" />
     <repeat direction="backward" />
    </barline>
   </measure>
   <!--============== Part: P2, Measure: 18 ==============-->
   <measure number="18" width="317">
+   <barline location="left">
+    <ending number="2" type="start" print-object="no" />
+   </barline>
    <note color="#000000" default-x="15" default-y="-20">
     <pitch>
      <step>B</step>
