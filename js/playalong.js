@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.40"; // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
+  const APP_VERSION = "1.41"; // v1.41: count-in (one bar of clicks, pickup-aware; 4 in 4/4, 3 in waltzes, 2 in jigs) + removed "three layers" footer text. Prev 1.40: // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -181,6 +181,7 @@
     backGuitar: $("backing-guitar"),
     kickVol: $("kick-volume"),
     kickOut: $("kick-volume-readout"),
+    countIn: $("countin"),
     scoreWrap: $("score-wrap"),
     scoreToggle: $("score-toggle"),
   };
@@ -620,6 +621,9 @@
     melodyPart: null,
     organPart: null,
     kickEventId: null,
+    countSynth: null,   // v1.41: count-in clicks (own gain, so a muted kick still counts you in)
+    countGain: null,
+    counting: false,
     // Sheet music (OSMD)
     osmd: null,       // OpenSheetMusicDisplay instance (null if CDN failed)
     scoreXml: null,   // raw MusicXML of the loaded tune (for resize re-render)
@@ -831,6 +835,16 @@
     // kick can sit ON TOP of the mix at max slider (Jason: +10 wasn't enough;
     // decay also lengthened 0.05→0.1 for more body/audibility).
     engine.kick.volume.value = 16;
+
+    // v1.41 count-in: same thud as the kick, on its own fixed gain so the
+    // count still sounds when a student has turned the kick down to 0.
+    engine.countGain = new Tone.Gain(0.4).toDestination();
+    engine.countSynth = new Tone.MembraneSynth({
+      pitchDecay: 0.008,
+      octaves: 2,
+      envelope: { attack: 0.0006, decay: 0.1, sustain: 0 },
+    }).connect(engine.countGain);
+    engine.countSynth.volume.value = 16;
 
     engine.built = true;
   }
@@ -1917,18 +1931,85 @@
     }
   }
 
+  // ---- Count-in (v1.41) ---------------------------------------------------
+  // One bar of clicks before the tune, one per kick pulse: 4 in 4/4, 3 in a
+  // waltz, 2 in a 6/8 jig. Pickup-aware: the Transport starts DURING the
+  // count so a pickup lands on the last beat(s) of the count-in bar, and the
+  // first downbeat lands exactly where the next bar would. Clicks the
+  // Transport's own kick will play are skipped, so nothing doubles.
+  let countInOn = true;
+  try { if (localStorage.getItem("pe_countin") === "0") countInOn = false; } catch (_) {}
+  function renderCountIn() {
+    if (!els.countIn) return;
+    els.countIn.classList.toggle("active", countInOn);
+    els.countIn.setAttribute("aria-pressed", countInOn ? "true" : "false");
+    els.countIn.textContent = countInOn ? "Count-in: On" : "Count-in: Off";
+  }
+  function startWithCountIn() {
+    const s = engine.score;
+    const barBeats = s.beatsPerBar * (4 / s.beatType);
+    const compound = s.beatType === 8 && s.beatsPerBar % 3 === 0;
+    const pulse = compound ? 1.5 : 1;                       // matches the kick
+    const n = Math.max(1, Math.round(barBeats / pulse));
+    let start = Tone.Transport.ticks / Tone.Transport.PPQ;
+    const floor = engine.section ? engine.section.start : s.loopStartBeats;
+    if (start < floor - 1e-6) start = floor;               // skip rest padding
+    let off = ((start - s.bodyStartBeats) % barBeats + barBeats) % barBeats;
+    if (off < 1e-6 || barBeats - off < 1e-6) off = 0;
+    const lead = off ? barBeats - off : 0;                 // pickup length
+    const downbeat = start + lead;
+    const spb = 60 / Tone.Transport.bpm.value;
+    const t0 = Tone.now() + 0.15;
+    const tDown = t0 + n * pulse * spb;
+    for (let i = 0; i < n; i++) {
+      const v = downbeat - (n - i) * pulse;                // where this click "is"
+      if (v >= start - 1e-6 && v >= s.bodyStartBeats - 1e-6) continue;
+      engine.countSynth.triggerAttackRelease(i === 0 ? "G2" : "C2", "8n",
+        t0 + i * pulse * spb, i === 0 ? 1 : 0.8);
+    }
+    Tone.Transport.position = beatToBBS(start);
+    Tone.Transport.start(tDown - lead * spb);
+    engine.counting = true;
+    setStatus("Count-in\u2026");
+    els.play.disabled = true;
+    els.pause.disabled = true;
+    els.stop.disabled = true;
+    setTimeout(() => {
+      engine.counting = false;
+      if (Tone.Transport.state === "started") {
+        els.pause.disabled = false;
+        els.stop.disabled = false;
+        setStatus("Playing.");
+      } else {
+        els.play.disabled = false;
+      }
+    // Tone.now() runs lookAhead (0.35 s) ahead of the audio clock, so time
+    // the UI to the AUDIBLE downbeat (context.currentTime) — otherwise the
+    // check races the Transport start and the status sticks on "Count-in".
+    }, Math.max(0, (tDown - Tone.context.currentTime) * 1000 + 50));
+    return n;
+  }
+
   // ---- Transport controls -------------------------------------------------
   async function onPlay() {
-    if (!engine.ready || !engine.melodyPart) return;
+    if (!engine.ready || !engine.melodyPart || engine.counting) return;
     await Tone.start();                       // unlock audio on user gesture
-    Tone.Transport.start();
+    let counted = 0;
+    if (countInOn && engine.countSynth && engine.score
+        && Tone.Transport.state === "stopped") {
+      counted = startWithCountIn();
+    } else {
+      Tone.Transport.start();
+    }
     // Play pressed is the real "used it" signal. Page views mean nothing.
     if (!pePlayStartedAt) pePlayStartedAt = Date.now();
     pePlayed = true;
     track("pe_start", {
       bpm: parseInt(els.tempo.value, 10) || 0,
       section: (engine.section && engine.section.label) || "Full",
+      countin: counted ? 1 : 0,
     });
+    if (counted) return;                      // count-in timer enables buttons
     setStatus("Playing.");
     els.play.disabled = true;
     els.pause.disabled = false;
@@ -1989,6 +2070,17 @@
     if (els.backOrgan && els.backGuitar) {
       els.backOrgan.addEventListener("click", () => setBacking("organ", true));
       els.backGuitar.addEventListener("click", () => setBacking("guitar", true));
+    }
+
+    // Count-in on/off (v1.41) — remembered per browser.
+    if (els.countIn) {
+      renderCountIn();
+      els.countIn.addEventListener("click", () => {
+        countInOn = !countInOn;
+        try { localStorage.setItem("pe_countin", countInOn ? "1" : "0"); } catch (_) {}
+        renderCountIn();
+        track("pe_countin", { on: countInOn ? 1 : 0 });
+      });
     }
   }
 

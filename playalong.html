@@ -418,6 +418,9 @@
         <button id="pause" disabled>Pause</button>
         <button id="stop" disabled>Stop</button>
       </div>
+      <div class="backing-toggle countin-row">
+        <button type="button" id="countin" class="active" aria-pressed="true" title="One bar of clicks before the tune starts">Count-in: On</button>
+      </div>
 
       <div class="sections" id="sections"></div>
 
@@ -456,7 +459,7 @@
 
 
       <p class="status" id="status">Initializing&hellip;</p>
-      <p class="hint">Spacebar toggles play/pause. Three layers, one Tone.js clock. <span id="version"></span></p>
+      <p class="hint">Spacebar toggles play/pause. <span id="version"></span></p>
 
       <div class="art"><img src="fiddler.png" alt="Pen-and-ink drawing of a seated fiddler" /></div>
     </div>
@@ -465,6 +468,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.40"></script>
+  <script src="js/playalong.js?v=1.41"></script>
 </body>
 </html>
