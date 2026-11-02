@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.41"; // v1.41: count-in (one bar of clicks, pickup-aware; 4 in 4/4, 3 in waltzes, 2 in jigs) + removed "three layers" footer text. Prev 1.40: // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
+  const APP_VERSION = "1.42"; // v1.42: count-in is TWO bars (Jason: one bar "sneaks up on you", esp. waltzes, jigs, pickups), accent on each bar's 1. v1.41: count-in (one bar of clicks, pickup-aware; 4 in 4/4, 3 in waltzes, 2 in jigs) + removed "three layers" footer text. Prev 1.40: // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -1932,8 +1932,8 @@
   }
 
   // ---- Count-in (v1.41) ---------------------------------------------------
-  // One bar of clicks before the tune, one per kick pulse: 4 in 4/4, 3 in a
-  // waltz, 2 in a 6/8 jig. Pickup-aware: the Transport starts DURING the
+  // Two bars of clicks before the tune (v1.42), one per kick pulse: 8 in 4/4,
+  // 6 in a waltz, 4 in a 6/8 jig. Pickup-aware: the Transport starts DURING the
   // count so a pickup lands on the last beat(s) of the count-in bar, and the
   // first downbeat lands exactly where the next bar would. Clicks the
   // Transport's own kick will play are skipped, so nothing doubles.
@@ -1950,7 +1950,8 @@
     const barBeats = s.beatsPerBar * (4 / s.beatType);
     const compound = s.beatType === 8 && s.beatsPerBar % 3 === 0;
     const pulse = compound ? 1.5 : 1;                       // matches the kick
-    const n = Math.max(1, Math.round(barBeats / pulse));
+    const perBar = Math.max(1, Math.round(barBeats / pulse));
+    const n = perBar * 2;                                  // v1.42: two bars
     let start = Tone.Transport.ticks / Tone.Transport.PPQ;
     const floor = engine.section ? engine.section.start : s.loopStartBeats;
     if (start < floor - 1e-6) start = floor;               // skip rest padding
@@ -1964,8 +1965,9 @@
     for (let i = 0; i < n; i++) {
       const v = downbeat - (n - i) * pulse;                // where this click "is"
       if (v >= start - 1e-6 && v >= s.bodyStartBeats - 1e-6) continue;
-      engine.countSynth.triggerAttackRelease(i === 0 ? "G2" : "C2", "8n",
-        t0 + i * pulse * spb, i === 0 ? 1 : 0.8);
+      const one = i % perBar === 0;                        // accent each bar's 1
+      engine.countSynth.triggerAttackRelease(one ? "G2" : "C2", "8n",
+        t0 + i * pulse * spb, one ? 1 : 0.8);
     }
     Tone.Transport.position = beatToBBS(start);
     Tone.Transport.start(tDown - lead * spb);
