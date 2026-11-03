@@ -267,6 +267,23 @@
       background: var(--fh-red); border-color: var(--fh-red); color: var(--fh-cream);
     }
 
+    /* ---- Feedback link (v1.44): looks like the row's buttons ---- */
+    .countin-row { flex-wrap: wrap; }
+    .feedback-link {
+      display: inline-flex; align-items: center;
+      padding: 0.3rem 0.8rem; font-size: 0.9rem; min-height: 36px; box-sizing: border-box;
+      font-family: 'Karla', sans-serif; font-weight: 700; text-decoration: none;
+      border: 1.5px solid var(--fh-ink); border-radius: 6px;
+      background: var(--fh-paper); color: var(--fh-ink); transition: all 0.15s ease;
+    }
+    .feedback-link:hover { border-color: var(--fh-red); color: var(--fh-red); }
+
+    /* ---- Demo video (v1.43) ---- */
+    .demo-panel { margin: 0.4rem 0 0.9rem; }
+    .demo-frame { position: relative; width: 100%; padding-top: 56.25%;
+      border: 1.5px solid var(--fh-ink); border-radius: 6px; overflow: hidden; background: #000; }
+    .demo-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
     /* ---- Sliders ---- */
     .slider { margin: 1rem 0; }
     .slider label {
@@ -420,6 +437,11 @@
       </div>
       <div class="backing-toggle countin-row">
         <button type="button" id="countin" class="active" aria-pressed="true" title="Two bars of clicks before the tune starts">Count-in: On</button>
+        <button type="button" id="demo-toggle" aria-pressed="false" aria-controls="demo-panel" title="Watch a short demo of the Practice Engine">&#9654; Demo</button>
+        <a id="feedback-link" class="feedback-link" href="mailto:jason@fiddlehed.com?subject=Practice%20Engine" target="_top" title="Tell Jason what you like, or what could be better">&#9993; Send Jason feedback</a>
+      </div>
+      <div class="demo-panel" id="demo-panel" hidden>
+        <div class="demo-frame"><iframe id="demo-iframe" title="Practice Engine demo" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
       </div>
 
       <div class="sections" id="sections"></div>
@@ -468,6 +490,6 @@
   <script src="https://cdn.jsdelivr.net/npm/tone@14.7.77/build/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.9.0/build/opensheetmusicdisplay.min.js"></script>
   <!-- Bump ?v= together with APP_VERSION so browsers fetch the new JS. -->
-  <script src="js/playalong.js?v=1.42"></script>
+  <script src="js/playalong.js?v=1.44"></script>
 </body>
 </html>

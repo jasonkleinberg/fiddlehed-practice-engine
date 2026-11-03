@@ -18,7 +18,7 @@
   // ---- Config -------------------------------------------------------------
   // Version: bump on EVERY user-visible change and tell Jason the number in
   // chat — it's how he verifies a hard-refresh actually took.
-  const APP_VERSION = "1.42"; // v1.42: count-in is TWO bars (Jason: one bar "sneaks up on you", esp. waltzes, jigs, pickups), accent on each bar's 1. v1.41: count-in (one bar of clicks, pickup-aware; 4 in 4/4, 3 in waltzes, 2 in jigs) + removed "three layers" footer text. Prev 1.40: // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
+  const APP_VERSION = "1.44"; // v1.44: "Send Jason feedback" mailto in the app (subject "Practice Engine"; body pre-filled with tune, version, device). v1.43: v1.43: "Demo" toggle opens Jason's Vimeo demo in place (lazy-loaded; pauses playback). v1.42: v1.42: count-in is TWO bars (Jason: one bar "sneaks up on you", esp. waltzes, jigs, pickups), accent on each bar's 1. v1.41: count-in (one bar of clicks, pickup-aware; 4 in 4/4, 3 in waltzes, 2 in jigs) + removed "three layers" footer text. Prev 1.40: // single-tune mode for lesson pages (?solo=1&tune=<slug>, optional &full=<fiddlehed.com URL>) + iPhone/iPad "turn off Silent Mode" banner (as in MetroDrone)
   // CACHE-BUSTER (v1.9): tune XMLs and index.json load via fetch(), which
   // Safari caches independently of the page — a hard-refresh renews the app
   // but can keep serving STALE TUNE FILES (bit Jason on 7/15: fixed
@@ -182,6 +182,10 @@
     kickVol: $("kick-volume"),
     kickOut: $("kick-volume-readout"),
     countIn: $("countin"),
+    demoToggle: $("demo-toggle"),
+    feedbackLink: $("feedback-link"),
+    demoPanel: $("demo-panel"),
+    demoIframe: $("demo-iframe"),
     scoreWrap: $("score-wrap"),
     scoreToggle: $("score-toggle"),
   };
@@ -2072,6 +2076,50 @@
     if (els.backOrgan && els.backGuitar) {
       els.backOrgan.addEventListener("click", () => setBacking("organ", true));
       els.backGuitar.addEventListener("click", () => setBacking("guitar", true));
+    }
+
+    // Demo video (v1.43). The iframe only gets its src when opened, so
+    // lesson pages don't load Vimeo on every view; closing clears it, which
+    // stops the video. Opening pauses the tune so the two don't play at once.
+    if (els.demoToggle && els.demoPanel && els.demoIframe) {
+      const DEMO_SRC = "https://player.vimeo.com/video/1242557313?h=ebbf19efd8&autoplay=1&title=0&byline=0&portrait=0&dnt=1";
+      els.demoToggle.addEventListener("click", () => {
+        const open = els.demoPanel.hidden;
+        if (open) {
+          if (Tone.Transport.state === "started" && !els.pause.disabled) onPause();
+          els.demoIframe.src = DEMO_SRC;
+          els.demoPanel.hidden = false;
+          els.demoToggle.innerHTML = "&#10005; Close demo";
+          track("pe_demo_open", {});
+        } else {
+          els.demoPanel.hidden = true;
+          els.demoIframe.removeAttribute("src");
+          els.demoToggle.innerHTML = "&#9654; Demo";
+        }
+        els.demoToggle.classList.toggle("active", open);
+        els.demoToggle.setAttribute("aria-pressed", open ? "true" : "false");
+      });
+    }
+
+    // Feedback (v1.44). Lives in the app so it travels to every lesson-page
+    // embed. Subject is always "Practice Engine" (Jason filters on it); the
+    // body carries tune / version / device so a vague report is still fixable.
+    // href is rebuilt on click so it names the tune open right now.
+    if (els.feedbackLink) {
+      els.feedbackLink.addEventListener("click", () => {
+        const ua = navigator.userAgent;
+        const device = /iPad/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ? "iPad"
+          : /iPhone|iPod/.test(ua) ? "iPhone"
+          : /Android/.test(ua) ? (/Mobile/.test(ua) ? "Android phone" : "Android tablet")
+          : /Mac/.test(ua) ? "Mac" : /Win/.test(ua) ? "Windows" : "Other";
+        const tune = (engine.current && (engine.current.title || engine.current.slug)) || "none";
+        const body = "Hi Jason,\n\n\n\n---\nTune: " + tune
+          + "\nVersion: " + APP_VERSION + "\nDevice: " + device
+          + "\nTempo: " + (parseInt(els.tempo.value, 10) || "") + " BPM";
+        els.feedbackLink.href = "mailto:jason@fiddlehed.com?subject="
+          + encodeURIComponent("Practice Engine") + "&body=" + encodeURIComponent(body);
+        track("pe_feedback_click", { tune: (engine.current && engine.current.slug) || "" });
+      });
     }
 
     // Count-in on/off (v1.41) — remembered per browser.
